@@ -19,6 +19,14 @@ let state = {
   selectedAccountType: 'free',
   selectedColor: '#6ee7b7',
   countdownIntervals: {},
+  // Cross-device sync caches (populated from Supabase on app start)
+  prompts: [],
+  accountTags: {},
+  costPrices: {},
+  groups: [],
+  chats: [],
+  notifHistory: [],
+  streak: { streak: 0, lastLog: '', history: [] },
 };
 window.state = state; // expose for FAB + other modules
 
@@ -114,6 +122,23 @@ async function showApp(user) {
   }
 
   await loadAll();
+
+  // Load cross-device syncable data from Supabase into state cache
+  if (typeof loadAllUserData === 'function') {
+    try {
+      const userData = await loadAllUserData();
+      if (userData.prompts) state.prompts = userData.prompts;
+      if (userData.accountTags) state.accountTags = userData.accountTags;
+      if (userData.costPrices) state.costPrices = userData.costPrices;
+      if (userData.groups) state.groups = userData.groups;
+      if (userData.chats) state.chats = userData.chats;
+      if (userData.notifHistory) state.notifHistory = userData.notifHistory;
+      if (userData.streak) state.streak = userData.streak;
+    } catch (e) {
+      console.warn('Could not load user data from server, using defaults');
+    }
+  }
+
   renderView();
   initNotifications();
   if (typeof window.initStreakUI === 'function') window.initStreakUI();
@@ -428,11 +453,16 @@ function initOnboarding() {
 // ═══════════════════════════════════════════════════════════════
 //  M — PROMPT LIBRARY
 // ═══════════════════════════════════════════════════════════════
-function loadPrompts() {
-  try { return JSON.parse(localStorage.getItem('limitless_prompts') || '[]'); }
-  catch { return []; }
-}
-function savePrompts(prompts) { localStorage.setItem('limitless_prompts', JSON.stringify(prompts)); }
+  function loadPrompts() {
+    if (state.prompts.length) return state.prompts;
+    try { return JSON.parse(localStorage.getItem('limitless_prompts') || '[]'); }
+    catch { return []; }
+  }
+  function savePrompts(prompts) {
+    state.prompts = prompts;
+    localStorage.setItem('limitless_prompts', JSON.stringify(prompts));
+    if (typeof setUserData === 'function') setUserData('prompts', prompts).catch(() => {});
+  }
 
 function renderPrompts(query = '') {
   const list = document.getElementById('prompts-list');
@@ -575,18 +605,19 @@ function renderTagsCurrent(accountId) {
   }
   container.innerHTML = tags.map(t => `<span class="tag-chip">${escHtml(t)}<button class="tag-remove" onclick="removeTag('${accountId}','${escHtml(t)}')">✕</button></span>`).join('');
 }
+function _allTags() {
+  if (Object.keys(state.accountTags).length) return state.accountTags;
+  try { return JSON.parse(localStorage.getItem('limitless_account_tags') || '{}'); }
+  catch { return {}; }
+}
 function getAccountTags(accountId) {
-  try {
-    const all = JSON.parse(localStorage.getItem('limitless_account_tags') || '{}');
-    return all[accountId] || [];
-  } catch { return []; }
+  return _allTags()[accountId] || [];
 }
 function saveAccountTags(accountId, tags) {
-  try {
-    const all = JSON.parse(localStorage.getItem('limitless_account_tags') || '{}');
-    all[accountId] = tags;
-    localStorage.setItem('limitless_account_tags', JSON.stringify(all));
-  } catch {}
+  const all = { ..._allTags(), [accountId]: tags };
+  state.accountTags = all;
+  localStorage.setItem('limitless_account_tags', JSON.stringify(all));
+  if (typeof setUserData === 'function') setUserData('accountTags', all).catch(() => {});
 }
 function addTag(accountId, tag) {
   if (!tag || !tag.trim()) return;
@@ -758,6 +789,7 @@ function renderCost() {
 }
 const DEFAULT_PRICES = { Claude: 20, ChatGPT: 20, Gemini: 19.99, Grok: 16, Copilot: 20, Other: 15 };
 function loadCostPrices() {
+  if (Object.keys(state.costPrices).length) return state.costPrices;
   try { return JSON.parse(localStorage.getItem('limitless_cost_prices') || '{}'); }
   catch { return {}; }
 }
@@ -831,10 +863,15 @@ function renderHeatmap() {
 //  C — ACCOUNT GROUPS
 // ═══════════════════════════════════════════════════════════════
 function loadGroups() {
+  if (state.groups.length) return state.groups;
   try { return JSON.parse(localStorage.getItem('limitless_groups') || '[]'); }
   catch { return []; }
 }
-function saveGroups(groups) { localStorage.setItem('limitless_groups', JSON.stringify(groups)); }
+function saveGroups(groups) {
+  state.groups = groups;
+  localStorage.setItem('limitless_groups', JSON.stringify(groups));
+  if (typeof setUserData === 'function') setUserData('groups', groups).catch(() => {});
+}
 
 function renderGroupsView() {
   const list = document.getElementById('groups-list');
@@ -960,7 +997,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.cost-price-input').forEach(inp => {
       prices[inp.dataset.platform] = parseFloat(inp.value) || 0;
     });
+    state.costPrices = prices;
     localStorage.setItem('limitless_cost_prices', JSON.stringify(prices));
+    if (typeof setUserData === 'function') setUserData('costPrices', prices).catch(() => {});
     document.getElementById('cost-edit-area').classList.add('hidden');
     renderCost();
     showToast('Prices saved');
@@ -1619,6 +1658,13 @@ function bindUIEvents() {
     _showAppGuard = false;
     state.accounts = [];
     state.projects = [];
+    state.prompts = [];
+    state.accountTags = {};
+    state.costPrices = {};
+    state.groups = [];
+    state.chats = [];
+    state.notifHistory = [];
+    state.streak = { streak: 0, lastLog: '', history: [] };
     showAuth();
   });
 
@@ -1797,7 +1843,9 @@ function bindUIEvents() {
   });
 
   $('notif-clear-btn').addEventListener('click', () => {
+    state.notifHistory = [];
     localStorage.removeItem('limitless_notif_history');
+    if (typeof deleteUserData === 'function') deleteUserData('notifHistory').catch(() => {});
     renderNotifList();
     $('bell-dot').classList.add('hidden');
     showToast('Notifications cleared');
@@ -1813,6 +1861,11 @@ function bindUIEvents() {
     $('notif-banner').classList.add('hidden');
     localStorage.setItem('limitless_notif_dismissed', '1');
   });
+}
+
+// ─── CLEAR LOCALSTORAGE SYNC KEYS ────────────────────────────
+function clearLocalStorageSyncKeys() {
+  ['limitless_prompts','limitless_account_tags','limitless_cost_prices','limitless_groups','limitless_chats','limitless_notif_history','limitless_streak','limitless_streak_last_log','limitless_streak_history'].forEach(k => localStorage.removeItem(k));
 }
 
 // ─── TOAST ────────────────────────────────────────────────────
@@ -1915,6 +1968,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ─── NOTIFICATION HISTORY ─────────────────────────────────────
 function getNotifHistory() {
+  if (state.notifHistory.length) return state.notifHistory;
   try { return JSON.parse(localStorage.getItem('limitless_notif_history') || '[]'); }
   catch { return []; }
 }
@@ -1922,8 +1976,10 @@ function getNotifHistory() {
 function addNotifHistory(platform, email) {
   const history = getNotifHistory();
   history.unshift({ platform, email, time: new Date().toISOString() });
-  // Keep last 30
-  localStorage.setItem('limitless_notif_history', JSON.stringify(history.slice(0, 30)));
+  const trimmed = history.slice(0, 30);
+  state.notifHistory = trimmed;
+  localStorage.setItem('limitless_notif_history', JSON.stringify(trimmed));
+  if (typeof setUserData === 'function') setUserData('notifHistory', trimmed).catch(() => {});
   $('bell-dot')?.classList.remove('hidden');
 }
 
@@ -2452,11 +2508,14 @@ setInterval(() => {
 
 // ── Storage helpers ──
 function loadChats() {
+  if (state.chats.length) return state.chats;
   try { return JSON.parse(localStorage.getItem('limitless_chats') || '[]'); }
   catch { return []; }
 }
 function saveChats(chats) {
+  state.chats = chats;
   localStorage.setItem('limitless_chats', JSON.stringify(chats));
+  if (typeof setUserData === 'function') setUserData('chats', chats).catch(() => {});
 }
 
 // ── Render ──
@@ -2717,6 +2776,8 @@ function renderCompare() {
   }
 
   function getStreakData() {
+    // Use Supabase-synced cache if available, fall back to localStorage
+    if (state.streak.lastLog) return state.streak;
     return {
       streak:   parseInt(localStorage.getItem(STREAK_KEY)   || '0'),
       lastLog:  localStorage.getItem(LAST_LOG_KEY) || '',
@@ -2725,9 +2786,11 @@ function renderCompare() {
   }
 
   function saveStreakData({ streak, lastLog, history }) {
+    state.streak = { streak, lastLog, history };
     localStorage.setItem(STREAK_KEY,   String(streak));
     localStorage.setItem(LAST_LOG_KEY, lastLog);
     localStorage.setItem(HISTORY_KEY,  JSON.stringify(history));
+    if (typeof setUserData === 'function') setUserData('streak', { streak, lastLog, history }).catch(() => {});
   }
 
   // ── Record activity for today ────────────────────────────
@@ -3047,6 +3110,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (confirm('Sign out?')) {
       await signOut();
       _showAppGuard = false;
+      state.accounts = [];
+      state.projects = [];
+      state.prompts = [];
+      state.accountTags = {};
+      state.costPrices = {};
+      state.groups = [];
+      state.chats = [];
+      state.notifHistory = [];
+      state.streak = { streak: 0, lastLog: '', history: [] };
       showAuth();
     }
   });
@@ -3061,6 +3133,14 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.disabled = true; btn.textContent = 'Deleting…';
     try {
       await deleteAllUserData();
+      state.prompts = [];
+      state.accountTags = {};
+      state.costPrices = {};
+      state.groups = [];
+      state.chats = [];
+      state.notifHistory = [];
+      state.streak = { streak: 0, lastLog: '', history: [] };
+      clearLocalStorageSyncKeys();
       await loadAll();
       renderView();
       switchView('dashboard');

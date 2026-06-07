@@ -3133,6 +3133,7 @@ select option { background: var(--bg-card); }
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 0.4rem;
   border-top: 1px solid var(--border);
   margin-top: 1rem;

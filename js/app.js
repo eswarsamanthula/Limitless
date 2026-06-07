@@ -113,13 +113,6 @@ async function showApp(user) {
     const userNameEl = $('user-name');
     const userEmail = user.email || '';
     userNameEl.textContent = user.user_metadata?.name || user.user_metadata?.full_name || userEmail.split('@')[0] || 'User';
-    userNameEl.title = userEmail;
-    userNameEl.style.cursor = 'pointer';
-    userNameEl.title = 'Open Gmail to contact ' + userEmail;
-    userNameEl.onclick = function (e) {
-      e.stopPropagation();
-      window.open('https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(userEmail), '_blank');
-    };
     const avatar = $('user-avatar');
     if (user.user_metadata?.avatar_url) {
       avatar.src = user.user_metadata.avatar_url;

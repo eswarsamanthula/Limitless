@@ -110,7 +110,15 @@ async function showApp(user) {
   $('app-screen').classList.add('active');
 
   if (user) {
-    $('user-name').textContent = user.user_metadata?.name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+    const userNameEl = $('user-name');
+    const userEmail = user.email || '';
+    userNameEl.textContent = user.user_metadata?.name || user.user_metadata?.full_name || userEmail.split('@')[0] || 'User';
+    userNameEl.title = userEmail;
+    userNameEl.style.cursor = 'pointer';
+    userNameEl.onclick = function (e) {
+      e.stopPropagation();
+      navigator.clipboard.writeText(userEmail).then(() => showToast('Copied: ' + userEmail)).catch(() => showToast(userEmail));
+    };
     const avatar = $('user-avatar');
     if (user.user_metadata?.avatar_url) {
       avatar.src = user.user_metadata.avatar_url;
@@ -118,7 +126,7 @@ async function showApp(user) {
     } else {
       avatar.style.display = 'none';
     }
-    if (typeof setNotifUserEmail === 'function') setNotifUserEmail(user.email || '');
+    if (typeof setNotifUserEmail === 'function') setNotifUserEmail(userEmail);
   }
 
   await loadAll();

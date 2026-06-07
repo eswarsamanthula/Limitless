@@ -1455,12 +1455,12 @@ async function handleSaveLimit() {
 
   try {
     await logLimit(accountId, resetAt, note);
+    // Record streak BEFORE render so the UI shows the updated count
+    if (typeof window.recordStreakActivity === 'function') window.recordStreakActivity();
     await loadAll();
     renderView();
     closeModal('modal-limit');
     showSuccess('Limit logged ⏱');
-    // Record streak activity
-    if (typeof window.recordStreakActivity === 'function') window.recordStreakActivity();
     // Schedule a notification
     const account = state.accounts.find(a => a.id === accountId);
     if (account) scheduleNotification(account, new Date(resetAt));

@@ -1,6 +1,3 @@
-# Local config (contains your real API keys)
-js/config.js
-
 # Environment files
 .env
 .env.local

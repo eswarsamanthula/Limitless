@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#f5f3ee" media="(prefers-color-scheme: light)" />
+  <meta name="description" content="Track AI usage limits across all your accounts and projects" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Limitless" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <title>Limitless — AI Limit Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- GRAIN OVERLAY -->
+<div class="grain"></div>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen" class="screen active">
+  <div class="auth-container">
+
+    <div class="auth-logo">
+      <span class="logo-mark">◎</span>
+      <h1 class="logo-text">Limitless</h1>
+    </div>
+    <p class="auth-tagline">Track every AI limit.<br/>Across every account.<br/><em>Never miss a reset.</em></p>
+
+    <!-- NOT CONFIGURED WARNING -->
+    <div id="auth-not-configured" class="auth-warning hidden">
+      ⚠ Supabase not configured. Open <code>js/config.js</code> and add your project URL + anon key.
+    </div>
+
+    <!-- EMAIL VERIFY MESSAGE -->
+    <div id="auth-verify-msg" class="auth-info hidden">
+      ✉ Check your email and click the confirmation link, then come back here to sign in.
+    </div>
+
+    <!-- GOOGLE -->
+    <button id="google-signin-btn" class="btn-google">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 6.293C4.672 4.166 6.656 3.58 9 3.58z"/></svg>
+      Continue with Google
+    </button>
+
+    <!-- DIVIDER -->
+    <div class="auth-divider"><span>or</span></div>
+
+    <!-- EMAIL FORM -->
+    <div class="auth-email-form" id="auth-email-form">
+      <div class="field-group">
+        <input type="email" id="auth-email-input" placeholder="your@email.com" autocomplete="email" />
+      </div>
+      <div class="field-group" id="auth-password-group">
+        <div class="password-wrap">
+          <input type="password" id="auth-password-input" placeholder="Password" autocomplete="current-password" />
+          <button class="toggle-pw" id="toggle-pw" type="button" aria-label="Show password">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- SIGNUP ONLY: confirm password -->
+      <div class="field-group hidden" id="auth-confirm-group">
+        <input type="password" id="auth-confirm-input" placeholder="Confirm password" autocomplete="new-password" />
+      </div>
+
+      <button class="btn-email-action" id="email-action-btn">Sign In</button>
+
+      <div class="auth-switch-row">
+        <span id="auth-switch-text">Don't have an account?</span>
+        <button class="btn-link" id="auth-switch-btn">Create one</button>
+      </div>
+
+      <button class="btn-link small" id="forgot-pw-btn">Forgot password?</button>
+    </div>
+
+    <p class="auth-note">Your data syncs across all your devices.<br/>Free. No ads. Ever.</p>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app-screen" class="screen">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header" id="sidebar-logo" style="cursor:pointer">
+      <span class="logo-mark small">◎</span>
+      <span class="logo-text small">Limitless</span>
+      <button class="sidebar-close" id="sidebar-close">✕</button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Core</span>
+      <button class="nav-item active" data-view="dashboard">
+        <span class="nav-icon">◈</span> Dashboard
+      </button>
+      <button class="nav-item" data-view="accounts">
+        <span class="nav-icon">◉</span> Accounts
+      </button>
+      <button class="nav-item" data-view="timeline">
+        <span class="nav-icon">◫</span> Timeline
+      </button>
+
+      <span class="nav-section-label">Organize</span>
+      <button class="nav-item" data-view="projects">
+        <span class="nav-icon">◧</span> Projects
+      </button>
+      <button class="nav-item" data-view="groups">
+        <span class="nav-icon">◈</span> Groups
+      </button>
+
+      <span class="nav-section-label">Insights</span>
+      <button class="nav-item" data-view="report">
+        <span class="nav-icon">▣</span> Weekly Report
+      </button>
+      <button class="nav-item" data-view="heatmap">
+        <span class="nav-icon">▦</span> Heatmap
+      </button>
+      <button class="nav-item" data-view="rotation">
+        <span class="nav-icon">↻</span> Rotation
+      </button>
+
+      <span class="nav-section-label">Library</span>
+      <button class="nav-item" data-view="chats">
+        <span class="nav-icon">◌</span> Saved Chats
+      </button>
+      <button class="nav-item" data-view="prompts">
+        <span class="nav-icon">✎</span> Prompts
+      </button>
+
+      <span class="nav-section-label">Reference</span>
+      <button class="nav-item" data-view="compare">
+        <span class="nav-icon">◰</span> Compare
+      </button>
+      <button class="nav-item" data-view="cost">
+        <span class="nav-icon">$</span> Cost
+      </button>
+
+      <span class="nav-section-label">Account</span>
+      <button class="nav-item" data-view="settings" id="nav-settings">
+        <span class="nav-icon">⊙</span> Profile & Settings
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <!-- STREAK PILL -->
+      <div id="streak-pill" class="streak-pill tier-zero" title="Log a limit today to start your streak!">
+        <span class="streak-flame">○</span>
+        <span class="streak-count">0</span>
+        <span class="streak-label">day streak</span>
+      </div>
+      <!-- SYNC BADGE -->
+      <div id="sync-badge" class="sync-badge">
+        <span class="sync-badge-dot"></span>
+        <span id="sync-text">Synced</span>
+      </div>
+      <!-- THEME TOGGLE -->
+      <button id="theme-toggle-btn" class="btn-theme-toggle" title="Toggle dark/light mode">
+        <span id="theme-icon">◑</span>
+        <span id="theme-label">Auto</span>
+      </button>
+      <div class="user-pill" id="user-pill" onclick="switchView('settings')" title="Profile & Settings" style="cursor:pointer">
+        <img id="user-avatar" src="" alt="" class="avatar" />
+        <span id="user-name">User</span>
+        <span class="user-pill-caret">⊙</span>
+      </div>
+      <button id="signout-btn" class="btn-signout">Sign out</button>
+    </div>
+  </aside>
+
+  <!-- OVERLAY -->
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <button class="hamburger" id="hamburger">
+        <span></span><span></span><span></span>
+      </button>
+      <h2 class="view-title" id="view-title">Dashboard</h2>
+      <div class="topbar-right">
+        <button class="btn-bell" id="bell-btn" title="Notifications">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          <span class="bell-dot hidden" id="bell-dot"></span>
+        </button>
+        <button class="btn-export" id="export-btn" title="Export status">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        </button>
+        <button class="btn-primary small" id="topbar-action">+ Add</button>
+      </div>
+    </header>
+
+    <!-- NOTIFICATION PANEL -->
+    <div id="notif-panel" class="notif-panel hidden">
+      <div class="notif-panel-header">
+        <span class="notif-panel-title">Notifications</span>
+        <div class="notif-panel-actions">
+          <button class="notif-toggle-btn" id="notif-toggle-btn">Enable</button>
+          <button class="notif-clear-btn" id="notif-clear-btn">Clear all</button>
+        </div>
+      </div>
+      <div id="notif-list" class="notif-list">
+        <div class="notif-empty">No notifications yet</div>
+      </div>
+    </div>
+    <div class="notif-panel-overlay hidden" id="notif-panel-overlay"></div>
+
+    <!-- DASHBOARD VIEW -->
+    <div id="view-dashboard" class="view active">
+      <div class="stats-row">
+        <div class="stat-card">
+          <span class="stat-num" id="stat-total">0</span>
+          <span class="stat-label">Accounts</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-num green" id="stat-available">0</span>
+          <span class="stat-label">Available</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-num amber" id="stat-cooling">0</span>
+          <span class="stat-label">On Cooldown</span>
+        </div>
+        <div class="stat-card streak-stat-card" id="stat-streak-card">
+          <div class="streak-stat-top">
+            <span class="streak-stat-flame">○</span>
+            <span class="streak-stat-num">0</span>
+          </div>
+          <span class="stat-label">day streak</span>
+          <div class="streak-dots"></div>
+        </div>
+      </div>
+
+      <div id="dash-suggest" class="smart-suggest hidden"></div>
+
+      <div class="dash-widgets" id="dash-widgets">
+        <div class="platform-pie-wrap" id="platform-pie-wrap">
+          <svg class="platform-pie-svg" id="platform-pie-svg" width="100" height="100" viewBox="0 0 100 100"></svg>
+          <div class="platform-pie-legend" id="platform-pie-legend"></div>
+        </div>
+        <div class="health-ring-wrap" id="health-ring-wrap">
+          <svg class="health-ring-svg" id="health-ring-svg" width="80" height="80" viewBox="0 0 80 80"></svg>
+          <div class="health-ring-info">
+            <span class="health-ring-label">Health Score</span>
+            <span class="health-ring-score" id="health-score">—</span>
+            <span class="health-ring-sub" id="health-sub">No data</span>
+          </div>
+        </div>
+        <div class="reason-analytics" id="reason-analytics">
+          <span style="font-family:var(--font-display);font-size:0.85rem;color:var(--text)">Why limits hit</span>
+          <div class="reason-analytics-bars" id="reason-bars">
+            <span style="font-size:0.75rem;color:var(--text-faint);font-style:italic">No data yet</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="dash-toolbar">
+        <div class="search-bar">
+          <span class="search-icon">⌕</span>
+          <input type="search" id="dash-search" placeholder="Search accounts…" autocomplete="off" />
+        </div>
+        <div class="toolbar-controls">
+          <div class="filter-row">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="available">Free</button>
+            <button class="filter-btn" data-filter="cooldown">Cooling</button>
+          </div>
+          <div class="sort-pills" id="sort-pills">
+            <button class="sort-pill active" data-sort="default">Default</button>
+            <button class="sort-pill" data-sort="platform">A→Z</button>
+            <button class="sort-pill" data-sort="status">Status</button>
+            <button class="sort-pill" data-sort="last_used">Recent</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="accounts-grid" id="accounts-grid">
+        <div class="empty-state" id="empty-dashboard">
+          <span class="empty-icon">◎</span>
+          <p>No accounts yet.<br/>Add your first AI account to start tracking.</p>
+          <button class="btn-primary" id="empty-add-btn">+ Add Account</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACCOUNTS VIEW -->
+    <div id="view-accounts" class="view">
+      <div class="accounts-toolbar" style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap">
+        <button class="btn-primary small" id="accounts-empty-add-btn">+ Add Account</button>
+        <button class="btn-ghost small" onclick="openBulkModal()" style="font-size:0.7rem">📋 Bulk Import</button>
+      </div>
+      <div class="accounts-list" id="accounts-list">
+        <div class="empty-state">
+          <span class="empty-icon">◉</span>
+          <p>No accounts added yet.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROJECTS VIEW -->
+    <div id="view-projects" class="view">
+      <div class="projects-list" id="projects-list">
+        <div class="empty-state">
+          <span class="empty-icon">◧</span>
+          <p>No projects yet.</p>
+          <button class="btn-primary" id="projects-empty-add-btn">+ Add Project</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TIMELINE VIEW -->
+    <div id="view-timeline" class="view">
+      <div class="tl-wrapper">
+
+        <!-- WINDOW TOGGLE -->
+        <div class="tl-controls">
+          <span class="tl-ctrl-label">Window</span>
+          <div class="tl-window-toggle">
+            <button class="tl-win-btn active" data-hours="6">6h</button>
+            <button class="tl-win-btn" data-hours="12">12h</button>
+            <button class="tl-win-btn" data-hours="24">24h</button>
+          </div>
+        </div>
+
+        <!-- READY NOW SECTION -->
+        <div class="tl-section">
+          <div class="tl-section-label">
+            <span class="tl-section-icon">●</span>
+            <span>Ready now</span>
+          </div>
+          <div id="tl-ready" class="tl-ready-area">
+            <div class="tl-empty-msg">No accounts available right now</div>
+          </div>
+        </div>
+
+        <!-- TIMELINE RULER -->
+        <div class="tl-section tl-ruler-section">
+          <div class="tl-section-label">
+            <span class="tl-section-icon" style="color:var(--amber)">●</span>
+            <span>Upcoming resets</span>
+          </div>
+          <div class="tl-ruler-wrap">
+            <div class="tl-labels" id="tl-labels"></div>
+            <div class="tl-track" id="tl-track">
+              <div class="tl-now-line" id="tl-now-line">
+                <span class="tl-now-label">now</span>
+              </div>
+            </div>
+          </div>
+          <div class="tl-legend" id="tl-legend"></div>
+        </div>
+
+        <!-- EMPTY STATE -->
+        <div class="tl-empty-state hidden" id="tl-empty">
+          <span class="empty-icon">◫</span>
+          <p>No accounts on cooldown.<br/>Everything is available right now.</p>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- SAVED CHATS VIEW -->
+    <div id="view-chats" class="view">
+      <div class="chats-toolbar">
+        <div class="search-bar">
+          <span class="search-icon">⌕</span>
+          <input type="search" id="chats-search" placeholder="Search saved chats…" autocomplete="off" />
+        </div>
+        <button class="btn-primary" id="add-chat-btn">+ Save Chat</button>
+      </div>
+      <div id="chats-list" class="chats-list">
+        <div class="empty-state" id="empty-chats">
+          <span class="empty-icon">◌</span>
+          <p>No saved chats yet.<br/>Save a link to any AI conversation to find it fast.</p>
+          <button class="btn-primary" id="empty-add-chat-btn">+ Save Chat</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODEL COMPARE VIEW -->
+    <div id="view-compare" class="view">
+      <div class="compare-header">
+        <h3 class="section-title">AI Model Comparison</h3>
+        <span class="compare-updated">Updated Jun 2026</span>
+      </div>
+      <div class="compare-scroll">
+        <table class="compare-table" id="compare-table">
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Free Limit</th>
+              <th>Pro Limit</th>
+              <th>Context</th>
+              <th>Free Cost</th>
+              <th>Pro Cost</th>
+              <th>Reset</th>
+            </tr>
+          </thead>
+          <tbody id="compare-tbody"></tbody>
+        </table>
+      </div>
+      <p class="compare-disclaimer">Limits are approximate and change frequently. Verify on each platform's pricing page.</p>
+    </div>
+
+    <!-- S — WEEKLY REPORT VIEW -->
+    <div id="view-report" class="view">
+      <div class="report-header">
+        <span class="report-badge" id="report-week-badge">Week 23</span>
+        <div class="report-nav">
+          <button class="report-nav-btn" id="report-prev">← Prev</button>
+          <button class="report-nav-btn" id="report-next">Next →</button>
+        </div>
+      </div>
+      <div id="report-content" class="report-content">
+        <div class="empty-state"><span class="empty-icon">▣</span><p>Loading your weekly report…</p></div>
+      </div>
+    </div>
+
+    <!-- M — PROMPT LIBRARY VIEW -->
+    <div id="view-prompts" class="view">
+      <div class="chats-toolbar">
+        <div class="search-bar">
+          <span class="search-icon">⌕</span>
+          <input type="search" id="prompts-search" placeholder="Search prompts…" autocomplete="off" />
+        </div>
+        <button class="btn-primary" id="add-prompt-btn">+ Add Prompt</button>
+      </div>
+      <div id="prompts-list" class="chats-list">
+        <div class="empty-state">
+          <span class="empty-icon">✎</span>
+          <p>No prompts saved yet.<br/>Save your favorite prompts for quick reuse.</p>
+          <button class="btn-primary" onclick="openPromptModal()">+ Add Prompt</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- P — COST TRACKER VIEW -->
+    <div id="view-cost" class="view">
+      <div class="cost-summary" id="cost-summary">
+        <div class="cost-total-card">
+          <span class="cost-total-label">Monthly Total</span>
+          <span class="cost-total-num" id="cost-total">$0</span>
+        </div>
+        <div class="cost-total-card cost-free-card">
+          <span class="cost-total-label">Free Accounts</span>
+          <span class="cost-total-num" id="cost-free-count">0</span>
+        </div>
+        <div class="cost-total-card cost-pro-card">
+          <span class="cost-total-label">Pro Accounts</span>
+          <span class="cost-total-num" id="cost-pro-count">0</span>
+        </div>
+      </div>
+      <div class="cost-breakdown" id="cost-breakdown"></div>
+      <div class="cost-actions">
+        <button class="btn-ghost" id="cost-edit-btn">✎ Edit Prices</button>
+      </div>
+      <div id="cost-edit-area" class="cost-edit-area hidden">
+        <p class="cost-edit-hint">Set monthly cost per platform (pro accounts only)</p>
+        <div class="cost-edit-grid" id="cost-edit-grid"></div>
+        <button class="btn-primary" id="cost-save-btn">Save Prices</button>
+      </div>
+    </div>
+
+    <!-- Q — LIMIT HEATMAP VIEW -->
+    <div id="view-heatmap" class="view">
+      <div class="heatmap-header">
+        <span class="heatmap-title">Limit Activity</span>
+        <div class="heatmap-year-nav">
+          <button class="heatmap-nav-btn" id="heatmap-prev">←</button>
+          <span id="heatmap-year">2026</span>
+          <button class="heatmap-nav-btn" id="heatmap-next">→</button>
+        </div>
+      </div>
+      <div id="heatmap-content" class="heatmap-content">
+        <div class="empty-state"><span class="empty-icon">▦</span><p>Not enough data yet.<br/>Log some limits to see your heatmap.</p></div>
+      </div>
+    </div>
+
+    <!-- R — ROTATION PLANNER VIEW -->
+    <div id="view-rotation" class="view">
+      <div class="rotation-intro">
+        <p class="rotation-desc">Optimal account rotation to maximize AI uptime. Follow the suggested order.</p>
+        <button class="btn-primary small" id="rotation-refresh">↻ Recalculate</button>
+      </div>
+      <div id="rotation-list" class="rotation-list">
+        <div class="empty-state"><span class="empty-icon">↻</span><p>Add accounts and log limits to get rotation suggestions.</p></div>
+      </div>
+    </div>
+
+    <!-- C — ACCOUNT GROUPS VIEW -->
+    <div id="view-groups" class="view">
+      <div class="groups-header">
+        <span class="groups-title">Account Groups</span>
+        <button class="btn-primary small" id="add-group-btn">+ New Group</button>
+      </div>
+      <div id="groups-list" class="groups-grid">
+        <div class="empty-state" style="grid-column:1/-1">
+          <span class="empty-icon">◈</span>
+          <p>No groups yet.<br/>Create groups to organize your accounts by purpose.</p>
+          <button class="btn-primary" onclick="openGroupModal()">+ New Group</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS VIEW -->
+    <div id="view-settings" class="view">
+      <div class="settings-wrapper">
+
+        <!-- ── PROFILE ── -->
+        <section class="settings-section">
+          <div class="settings-section-header">
+            <span class="settings-section-icon">◉</span>
+            <span>Profile</span>
+          </div>
+          <div class="settings-card">
+            <!-- Avatar + name + email -->
+            <div class="profile-avatar-row">
+              <div class="profile-avatar-wrap">
+                <img id="settings-avatar-img" src="" alt="" class="profile-avatar-img" />
+                <div id="settings-avatar-initials" class="profile-avatar-initials">E</div>
+              </div>
+              <div>
+                <div id="settings-display-name" class="profile-display-name">—</div>
+                <div id="settings-email-display" class="profile-email-display">—</div>
+              </div>
+            </div>
+            <!-- Display name field -->
+            <div class="settings-card-row">
+              <label class="settings-label">Display Name</label>
+              <div class="settings-input-row">
+                <input type="text" id="settings-name-input" class="settings-input" placeholder="Your name" autocomplete="off" />
+                <button class="btn-primary small" id="save-name-btn">Save</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── SECURITY ── -->
+        <section class="settings-section">
+          <div class="settings-section-header">
+            <span class="settings-section-icon">⊙</span>
+            <span>Security</span>
+          </div>
+          <div class="settings-card">
+            <!-- Current email (read only) -->
+            <div class="settings-card-row">
+              <label class="settings-label">Current Email</label>
+              <div class="settings-current-email" id="settings-current-email-display">—</div>
+            </div>
+            <!-- New email -->
+            <div class="settings-card-row">
+              <label class="settings-label">Change Email</label>
+              <div class="settings-input-row">
+                <input type="email" id="settings-new-email" class="settings-input" placeholder="New email address" autocomplete="email" />
+                <button class="btn-primary small" id="save-email-btn">Update</button>
+              </div>
+              <span class="settings-hint">A confirmation link will be sent to the new address.</span>
+            </div>
+            <!-- New password -->
+            <div class="settings-card-row">
+              <label class="settings-label">Change Password</label>
+              <div class="settings-input-row">
+                <div class="password-wrap" style="flex:1">
+                  <input type="password" id="settings-new-password" class="settings-input" placeholder="New password (6+ chars)" autocomplete="new-password" />
+                  <button class="toggle-pw" id="toggle-settings-pw" type="button" aria-label="Show password">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="settings-input-row" style="margin-top:0.4rem">
+                <input type="password" id="settings-confirm-password" class="settings-input" placeholder="Confirm new password" autocomplete="new-password" />
+                <button class="btn-primary small" id="save-password-btn">Change</button>
+              </div>
+              <span class="settings-hint">Leave blank to keep your current password.</span>
+            </div>
+            <!-- Reset via email -->
+            <div class="settings-card-row row-action">
+              <div class="settings-row-text">
+                <div class="settings-row-label">Reset via Email</div>
+                <div class="settings-row-sub">Send a reset link to your current email.</div>
+              </div>
+              <button class="btn-ghost small" id="send-reset-btn">Send Link</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── PREFERENCES ── -->
+        <section class="settings-section">
+          <div class="settings-section-header">
+            <span class="settings-section-icon">◑</span>
+            <span>Preferences</span>
+          </div>
+          <div class="settings-card">
+            <!-- Theme -->
+            <div class="settings-card-row row-action">
+              <div class="settings-row-text">
+                <div class="settings-row-label">Theme</div>
+                <div class="settings-row-sub">Auto follows your system.</div>
+              </div>
+              <div class="tl-window-toggle">
+                <button class="tl-win-btn" data-theme-pick="light">Light</button>
+                <button class="tl-win-btn" data-theme-pick="auto">Auto</button>
+                <button class="tl-win-btn" data-theme-pick="dark">Dark</button>
+              </div>
+            </div>
+            <!-- Notifications -->
+            <div class="settings-card-row row-action">
+              <div class="settings-row-text">
+                <div class="settings-row-label">Notifications</div>
+                <div class="settings-row-sub" id="settings-notif-status">Not enabled yet.</div>
+              </div>
+              <button class="btn-primary small" id="settings-notif-btn">Enable</button>
+            </div>
+            <!-- Email notifications -->
+            <div class="settings-card-row row-action">
+              <div class="settings-row-text">
+                <div class="settings-row-label">Email Alerts</div>
+                <div class="settings-row-sub">Get an email when a limit resets.</div>
+              </div>
+              <button class="btn-ghost small" id="settings-email-toggle">ON</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── DANGER ZONE ── -->
+        <section class="settings-section">
+          <div class="settings-section-header danger-header">
+            <span class="settings-section-icon">⚠</span>
+            <span>Danger Zone</span>
+          </div>
+          <div class="settings-card danger-card">
+            <div class="settings-card-row row-action">
+              <div class="settings-row-text">
+                <div class="settings-row-label">Sign Out</div>
+                <div class="settings-row-sub">Sign out on this device.</div>
+              </div>
+              <button class="btn-ghost small" id="settings-signout-btn">Sign Out</button>
+            </div>
+            <div class="settings-card-row row-action">
+              <div class="settings-row-text">
+                <div class="settings-row-label" style="color:var(--red)">Delete All Data</div>
+                <div class="settings-row-sub">Permanently wipes all accounts &amp; projects.</div>
+              </div>
+              <button class="btn-danger small" id="settings-delete-data-btn">Delete</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── APP INFO ── -->
+        <div class="settings-app-info">
+          <span class="logo-mark small">◎</span>
+          <span>Limitless v1.0</span>
+          <span class="settings-info-dot">·</span>
+          <span>Free. No ads. Ever.</span>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ============ MODALS ============ -->
+
+<!-- ADD/EDIT ACCOUNT MODAL -->
+<div id="modal-account" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-account-title">Add Account</h3>
+      <button class="modal-close" data-modal="modal-account">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="account-id" />
+      <div class="field-group">
+        <label>Platform</label>
+        <div class="platform-picker" id="platform-picker">
+          <button class="platform-btn" data-platform="Claude"><span class="platform-dot claude"></span> Claude</button>
+          <button class="platform-btn" data-platform="ChatGPT"><span class="platform-dot chatgpt"></span> ChatGPT</button>
+          <button class="platform-btn" data-platform="Gemini"><span class="platform-dot gemini"></span> Gemini</button>
+          <button class="platform-btn" data-platform="Grok"><span class="platform-dot grok"></span> Grok</button>
+          <button class="platform-btn" data-platform="Copilot"><span class="platform-dot copilot"></span> Copilot</button>
+          <button class="platform-btn" data-platform="Other"><span class="platform-dot other"></span> Other</button>
+        </div>
+        <div id="custom-platform-group" class="hidden" style="margin-top:0.5rem">
+          <input type="text" id="custom-platform-name" placeholder="e.g. Perplexity, Mistral, Llama…" maxlength="40" />
+        </div>
+      </div>
+      <div class="field-group">
+        <label for="account-email">Email / Label</label>
+        <input type="text" id="account-email" placeholder="e.g. myname@gmail.com" />
+      </div>
+      <div class="field-group">
+        <label for="account-type">Account Type</label>
+        <div class="toggle-group">
+          <button class="toggle-btn active" data-type="free">Free</button>
+          <button class="toggle-btn" data-type="pro">Pro</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Projects (optional)</label>
+        <div id="account-projects-list" class="project-checklist">
+          <span class="checklist-empty">No projects yet — add one first</span>
+        </div>
+      </div>
+      <div class="field-group">
+        <label for="account-note">Note (optional)</label>
+        <input type="text" id="account-note" placeholder="e.g. used for coding tasks" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" data-modal="modal-account">Cancel</button>
+      <button class="btn-primary" id="save-account-btn">Save Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOG LIMIT MODAL -->
+<div id="modal-limit" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Log Limit Hit</h3>
+      <button class="modal-close" data-modal="modal-limit">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="limit-account-id" />
+      <p class="modal-subtitle" id="limit-account-label">Account</p>
+      <div class="field-group">
+        <label>When will it reset?</label>
+        <div class="quick-times">
+          <button class="quick-btn" data-hours="1">+1 hr</button>
+          <button class="quick-btn" data-hours="3">+3 hrs</button>
+          <button class="quick-btn" data-hours="6">+6 hrs</button>
+          <button class="quick-btn" data-hours="12">+12 hrs</button>
+          <button class="quick-btn" data-hours="24">+24 hrs</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label for="reset-datetime">Or pick exact time</label>
+        <input type="datetime-local" id="reset-datetime" />
+      </div>
+      <div class="field-group">
+        <label>Reason <span style="opacity:0.5;font-size:0.65rem">(optional)</span></label>
+        <div class="reason-chips" id="reason-chips">
+          <button type="button" class="reason-chip" data-reason="Message">💬 Message</button>
+          <button type="button" class="reason-chip" data-reason="Image">🖼 Image</button>
+          <button type="button" class="reason-chip" data-reason="Code">⌨ Code</button>
+          <button type="button" class="reason-chip" data-reason="Search">🔍 Search</button>
+          <button type="button" class="reason-chip" data-reason="Other">… Other</button>
+        </div>
+        <input type="text" id="limit-note" placeholder="Add note…" style="margin-top:0.4rem;display:none" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" data-modal="modal-limit">Cancel</button>
+      <button class="btn-danger" id="save-limit-btn">Log Limit ⏱</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD PROJECT MODAL -->
+<div id="modal-project" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-project-title">Add Project</h3>
+      <button class="modal-close" data-modal="modal-project">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="project-id" />
+      <div class="field-group">
+        <label for="project-name">Project Name</label>
+        <input type="text" id="project-name" placeholder="e.g. Side Hustle App" />
+      </div>
+      <div class="field-group">
+        <label for="project-desc">Description (optional)</label>
+        <input type="text" id="project-desc" placeholder="What is this project about?" />
+      </div>
+      <div class="field-group">
+        <label>Color Tag</label>
+        <div class="color-picker" id="color-picker">
+          <button class="color-swatch active" data-color="#6ee7b7" style="background:#6ee7b7"></button>
+          <button class="color-swatch" data-color="#93c5fd" style="background:#93c5fd"></button>
+          <button class="color-swatch" data-color="#fca5a5" style="background:#fca5a5"></button>
+          <button class="color-swatch" data-color="#fcd34d" style="background:#fcd34d"></button>
+          <button class="color-swatch" data-color="#c4b5fd" style="background:#c4b5fd"></button>
+          <button class="color-swatch" data-color="#f9a8d4" style="background:#f9a8d4"></button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" data-modal="modal-project">Cancel</button>
+      <button class="btn-primary" id="save-project-btn">Save Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast"></div>
+
+<!-- OFFLINE BANNER -->
+<div id="offline-banner" class="offline-banner hidden" role="alert">
+  <span class="offline-icon">⚡</span>
+  <span>You are offline — showing cached data</span>
+</div>
+
+<!-- SESSION EXPIRED BANNER -->
+<div id="session-banner" class="session-banner hidden" role="alert">
+  <span>Session expired.</span>
+  <button id="session-reauth-btn">Sign in again</button>
+</div>
+
+<!-- NOTIFICATION BANNER -->
+<div id="notif-banner" class="notif-banner hidden">
+  <span>🔔 Enable notifications to get alerted when limits reset.</span>
+  <button id="enable-notif-btn">Enable</button>
+  <button id="dismiss-notif-btn">✕</button>
+</div>
+
+<!-- ═══ FEATURE D: PWA INSTALL BANNER ═══ -->
+<div id="pwa-banner" class="pwa-banner hidden" role="banner" aria-label="Install app">
+  <div class="pwa-banner-icon">◎</div>
+  <div class="pwa-banner-text">
+    <strong>Add to Home Screen</strong>
+    <span>Install Limitless for instant access &amp; offline use</span>
+  </div>
+  <button id="pwa-install-btn" class="pwa-install-btn">Install</button>
+  <button id="pwa-dismiss-btn" class="pwa-dismiss-btn" aria-label="Dismiss">✕</button>
+</div>
+
+<!-- ═══ FEATURE E: QUICK-SWITCH FAB ═══ -->
+<div id="qs-backdrop" class="qs-backdrop hidden"></div>
+<div id="qs-fab-wrap" class="qs-fab-wrap hidden">
+  <div id="qs-panel" class="qs-panel hidden" role="listbox" aria-label="Available accounts">
+    <div class="qs-panel-header">
+      <span class="qs-panel-title">Available now</span>
+      <span class="qs-panel-hint">tap to copy email</span>
+    </div>
+    <div id="qs-list" class="qs-list"></div>
+  </div>
+  <button id="qs-fab" class="qs-fab" aria-label="Quick switch — available accounts" title="Quick switch [Q]">
+    <span class="qs-fab-icon">◉</span>
+    <span id="qs-fab-count" class="qs-fab-count">0</span>
+  </button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/db.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/app.js"></script>
+
+<!-- SAVE CHAT MODAL -->
+<div id="modal-chat" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-chat-title">Save Chat</h3>
+      <button class="modal-close" data-modal="modal-chat">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="chat-id" />
+      <div class="field-group">
+        <label for="chat-title">Title</label>
+        <input type="text" id="chat-title" placeholder="e.g. Resume rewrite, Python debug…" autocomplete="off" />
+      </div>
+      <div class="field-group">
+        <label for="chat-url">Chat URL <span style="opacity:0.45;font-size:0.63rem;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <input type="url" id="chat-url" placeholder="https://claude.ai/chat/…" autocomplete="off" spellcheck="false" />
+      </div>
+      <div class="field-group">
+        <label>Platform</label>
+        <div class="reason-chips" id="chat-platform-chips">
+          <button type="button" class="reason-chip selected" data-platform="Claude">Claude</button>
+          <button type="button" class="reason-chip" data-platform="ChatGPT">ChatGPT</button>
+          <button type="button" class="reason-chip" data-platform="Gemini">Gemini</button>
+          <button type="button" class="reason-chip" data-platform="Grok">Grok</button>
+          <button type="button" class="reason-chip" data-platform="Copilot">Copilot</button>
+          <button type="button" class="reason-chip" data-platform="Other">+ Custom</button>
+        </div>
+        <input type="text" id="chat-custom-platform" placeholder="e.g. Perplexity, Mistral…" autocomplete="off"
+          style="display:none;margin-top:0.4rem" />
+      </div>
+      <div class="field-group">
+        <label for="chat-note">Note <span style="opacity:0.45;font-size:0.63rem;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <input type="text" id="chat-note" placeholder="Short note for yourself…" autocomplete="off" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" data-modal="modal-chat">Cancel</button>
+      <button class="btn-primary" id="save-chat-btn">Save Chat ◌</button>
+    </div>
+  </div>
+</div>
+
+<!-- M — SAVE PROMPT MODAL -->
+<div id="modal-prompt" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-prompt-title">Save Prompt</h3>
+      <button class="modal-close" data-modal="modal-prompt">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="prompt-id" />
+      <div class="field-group">
+        <label for="prompt-title">Title</label>
+        <input type="text" id="prompt-title" placeholder="e.g. Code review, Essay outline…" autocomplete="off" />
+      </div>
+      <div class="field-group">
+        <label for="prompt-text">Prompt</label>
+        <textarea id="prompt-text" class="textarea-field" rows="4" placeholder="Paste or type your prompt…" spellcheck="true"></textarea>
+      </div>
+      <div class="field-group">
+        <label for="prompt-platform">Platform</label>
+        <div class="reason-chips" id="prompt-platform-chips">
+          <button type="button" class="reason-chip selected" data-platform="Any">Any</button>
+          <button type="button" class="reason-chip" data-platform="Claude">Claude</button>
+          <button type="button" class="reason-chip" data-platform="ChatGPT">ChatGPT</button>
+          <button type="button" class="reason-chip" data-platform="Gemini">Gemini</button>
+          <button type="button" class="reason-chip" data-platform="Grok">Grok</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Tag <span class="text-faint" style="opacity:0.5;font-size:0.63rem;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <input type="text" id="prompt-tag" placeholder="e.g. writing, coding, research" autocomplete="off" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" data-modal="modal-prompt">Cancel</button>
+      <button class="btn-primary" id="save-prompt-btn">Save Prompt ✎</button>
+    </div>
+  </div>
+</div>
+
+<!-- B — BULK IMPORT MODAL -->
+<div id="modal-bulk" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Bulk Import Accounts</h3>
+      <button class="modal-close" data-modal="modal-bulk">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="bulk-hint">Paste one account per line:<br/><code>Platform, email/label, type</code></p>
+      <textarea id="bulk-textarea" class="textarea-field" rows="8" placeholder="Claude, myname@gmail.com, free&#10;ChatGPT, work@company.com, pro&#10;Gemini, personal@gmail.com, free&#10;Grok, @username, free"></textarea>
+      <div id="bulk-preview" class="bulk-preview hidden"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" data-modal="modal-bulk">Cancel</button>
+      <button class="btn-primary" id="bulk-import-btn">Import All</button>
+    </div>
+  </div>
+</div>
+
+<!-- C — ACCOUNT GROUP MODAL -->
+<div id="modal-group" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-group-title">Account Group</h3>
+      <button class="modal-close" data-modal="modal-group">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="group-id" />
+      <div class="field-group">
+        <label for="group-name">Group Name</label>
+        <input type="text" id="group-name" placeholder="e.g. Work, Coding, Research" />
+      </div>
+      <div class="field-group">
+        <label>Color</label>
+        <div class="color-picker" id="group-color-picker">
+          <button class="color-swatch active" data-color="#6ee7b7" style="background:#6ee7b7"></button>
+          <button class="color-swatch" data-color="#93c5fd" style="background:#93c5fd"></button>
+          <button class="color-swatch" data-color="#fca5a5" style="background:#fca5a5"></button>
+          <button class="color-swatch" data-color="#fcd34d" style="background:#fcd34d"></button>
+          <button class="color-swatch" data-color="#c4b5fd" style="background:#c4b5fd"></button>
+          <button class="color-swatch" data-color="#f9a8d4" style="background:#f9a8d4"></button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" data-modal="modal-group">Cancel</button>
+      <button class="btn-primary" id="save-group-btn">Save Group</button>
+    </div>
+  </div>
+</div>
+
+<!-- W — TAGS MODAL (on account card) -->
+<div id="modal-tags" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Edit Tags</h3>
+      <button class="modal-close" data-modal="modal-tags">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="tags-account-id" />
+      <p class="modal-subtitle">Add custom labels to this account</p>
+      <div class="field-group">
+        <label>Current Tags</label>
+        <div id="tags-current" class="tags-current">
+          <span class="checklist-empty">No tags yet</span>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Add Tag</label>
+        <div class="tags-add-row">
+          <input type="text" id="tags-input" placeholder="e.g. coding, writing, work" maxlength="20" />
+          <button class="btn-primary small" id="tags-add-btn">Add</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Suggested</label>
+        <div class="tags-suggested" id="tags-suggested">
+          <button class="tag-suggest" data-tag="coding">coding</button>
+          <button class="tag-suggest" data-tag="writing">writing</button>
+          <button class="tag-suggest" data-tag="research">research</button>
+          <button class="tag-suggest" data-tag="image">image</button>
+          <button class="tag-suggest" data-tag="code">code</button>
+          <button class="tag-suggest" data-tag="analysis">analysis</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" data-modal="modal-tags">Cancel</button>
+      <button class="btn-primary" id="save-tags-btn">Save Tags</button>
+    </div>
+  </div>
+</div>
+
+<!-- A — ONBOARDING OVERLAY -->
+<div id="onboarding-overlay" class="onboarding-overlay hidden">
+  <div class="onboarding-card" id="onboarding-card">
+    <div class="onboarding-step" data-step="0">
+      <div class="onboarding-icon">◎</div>
+      <h2 class="onboarding-title">Welcome to Limitless</h2>
+      <p class="onboarding-desc">Track every AI limit across every account. Never miss a reset.</p>
+      <button class="btn-primary onboarding-next">Get Started →</button>
+    </div>
+    <div class="onboarding-step hidden" data-step="1">
+      <div class="onboarding-icon">◉</div>
+      <h2 class="onboarding-title">Add Your Accounts</h2>
+      <p class="onboarding-desc">First, add the AI accounts you use — Claude, ChatGPT, Gemini, and more. Track free and pro limits separately.</p>
+      <button class="btn-primary onboarding-next">Next →</button>
+    </div>
+    <div class="onboarding-step hidden" data-step="2">
+      <div class="onboarding-icon">⏱</div>
+      <h2 class="onboarding-title">Log Limits</h2>
+      <p class="onboarding-desc">When you hit a limit, tap "Log Limit" and set the reset time. Limitless will count down and notify you.</p>
+      <button class="btn-primary onboarding-next">Next →</button>
+    </div>
+    <div class="onboarding-step hidden" data-step="3">
+      <div class="onboarding-icon">◫</div>
+      <h2 class="onboarding-title">Stay in the Flow</h2>
+      <p class="onboarding-desc">Use the Timeline to see upcoming resets, the FAB to copy emails fast, and streaks to stay consistent.</p>
+      <button class="btn-primary onboarding-finish">Start Using Limitless ✦</button>
+    </div>
+    <div class="onboarding-dots" id="onboarding-dots">
+      <span class="onb-dot active"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span>
+    </div>
+    <button class="onboarding-skip" id="onboarding-skip">Skip</button>
+  </div>
+</div>
+
+</body>
+</html>

@@ -219,13 +219,10 @@ function renderDashboard() {
   const total = state.accounts.length;
   const cooling = state.accounts.filter(a => isOnCooldown(a)).length;
   const available = total - cooling;
-  const limitsHit = state.accounts.filter(a => a.limit_hit_at).length;
 
   $('stat-total').textContent = total;
   $('stat-available').textContent = available;
   $('stat-cooling').textContent = cooling;
-  const limitsEl = $('stat-limits-hit');
-  if (limitsEl) limitsEl.textContent = limitsHit;
 
   // Grid
   const grid = $('accounts-grid');
@@ -322,6 +319,7 @@ function renderReasonAnalytics() {
   if (!container) return;
   const reasons = {};
   let noReason = 0;
+  const totalLimits = state.accounts.filter(a => a.limit_hit_at).length;
   state.accounts.forEach(a => {
     if (!a.limit_hit_at) return;
     if (a.limit_note) reasons[a.limit_note] = (reasons[a.limit_note] || 0) + 1;
@@ -335,7 +333,7 @@ function renderReasonAnalytics() {
   }
   const maxCount = entries[0][1];
   const ICONS = { Message:'💬', Image:'🖼', Code:'⌨', Search:'🔍' };
-  container.innerHTML = entries.map(([reason, count]) => {
+  container.innerHTML = `<div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:600">${totalLimits} limit${totalLimits!==1?'s':''} hit</div>` + entries.map(([reason, count]) => {
     const pct = maxCount > 0 ? (count / maxCount) * 100 : 0;
     const color = reason === 'Message' ? '#93c5fd' : reason === 'Image' ? '#fca5a5' : reason === 'Code' ? '#6ee7b7' : reason === 'Search' ? '#fcd34d' : '#c4b5fd';
     return `<div class="reason-bar-row">

@@ -90,6 +90,14 @@ async function showApp(user) {
   if (_showAppGuard) return;
   _showAppGuard = true;
 
+  // Fetch fresh user profile from server (JWT metadata can be stale across devices)
+  if (typeof getFreshUser === 'function') {
+    try {
+      const fresh = await getFreshUser();
+      if (fresh) { user = fresh; currentUser = fresh; }
+    } catch (_) {}
+  }
+
   $('auth-screen').classList.remove('active');
   $('app-screen').classList.add('active');
 

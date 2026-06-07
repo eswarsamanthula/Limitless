@@ -14,7 +14,8 @@ function initNotifications() {
 
   notifPermission = Notification.permission;
 
-  if (typeof emailjs !== 'undefined') {
+  // Only init EmailJS if email alerts are not turned off
+  if (typeof emailjs !== 'undefined' && localStorage.getItem('limitless_email_alerts') !== 'off') {
     emailjs.init(EMAILJS_PUBLIC_KEY);
   }
 
@@ -121,7 +122,10 @@ function fireNotification(platform, accountEmail) {
     addNotifHistory(platform, accountEmail);
   }
 
-  sendEmailNotification(platform, accountEmail);
+  // Re-check toggle here (in addition to inside sendEmailNotification)
+  if (localStorage.getItem('limitless_email_alerts') !== 'off') {
+    sendEmailNotification(platform, accountEmail);
+  }
 }
 
 // ─── NOTIFY RESET (called from app.js countdowntick) ─────────

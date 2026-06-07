@@ -3102,6 +3102,10 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('limitless_email_alerts', next);
     $('settings-email-toggle').textContent = next === 'off' ? 'OFF' : 'ON';
     $('settings-email-toggle').className = next === 'off' ? 'btn-ghost small danger' : 'btn-ghost small';
+    // If turning on, init EmailJS (may not have been inited if it was off)
+    if (next === 'on' && typeof emailjs !== 'undefined') {
+      emailjs.init(EMAILJS_PUBLIC_KEY);
+    }
     showToast(next === 'off' ? 'Email alerts off' : 'Email alerts on');
   });
 

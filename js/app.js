@@ -219,10 +219,13 @@ function renderDashboard() {
   const total = state.accounts.length;
   const cooling = state.accounts.filter(a => isOnCooldown(a)).length;
   const available = total - cooling;
+  const limitsHit = state.accounts.filter(a => a.limit_hit_at).length;
 
   $('stat-total').textContent = total;
   $('stat-available').textContent = available;
   $('stat-cooling').textContent = cooling;
+  const limitsEl = $('stat-limits-hit');
+  if (limitsEl) limitsEl.textContent = limitsHit;
 
   // Grid
   const grid = $('accounts-grid');
@@ -318,9 +321,13 @@ function renderReasonAnalytics() {
   const container = document.getElementById('reason-bars');
   if (!container) return;
   const reasons = {};
+  let noReason = 0;
   state.accounts.forEach(a => {
+    if (!a.limit_hit_at) return;
     if (a.limit_note) reasons[a.limit_note] = (reasons[a.limit_note] || 0) + 1;
+    else noReason++;
   });
+  if (noReason) reasons['No reason'] = noReason;
   const entries = Object.entries(reasons).sort((a,b) => b[1] - a[1]);
   if (entries.length === 0) {
     container.innerHTML = '<span style="font-size:0.75rem;color:var(--text-faint);font-style:italic">No limit data yet</span>';

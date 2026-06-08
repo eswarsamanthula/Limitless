@@ -3381,10 +3381,21 @@ function openMessageModal(msgId = null) {
   document.getElementById('message-reply').value   = msg?.reply  || '';
   document.getElementById('message-tags').value    = (msg?.tags || []).join(', ');
 
+  const knownPlatforms = ['Claude','ChatGPT','Gemini','Grok','Copilot'];
   const savedPlatform = msg?.platform || 'Claude';
+  const isKnown = knownPlatforms.includes(savedPlatform);
+  const customInput = document.getElementById('message-custom-platform');
   document.querySelectorAll('#message-platform-chips .reason-chip').forEach(chip => {
-    chip.classList.toggle('selected', chip.dataset.platform === savedPlatform);
+    const match = isKnown ? chip.dataset.platform === savedPlatform : chip.dataset.platform === 'Other';
+    chip.classList.toggle('selected', match);
   });
+  if (!isKnown && savedPlatform) {
+    customInput.style.display = 'block';
+    customInput.value = savedPlatform;
+  } else {
+    customInput.style.display = 'none';
+    customInput.value = '';
+  }
 
   document.getElementById('modal-message-title').textContent = msgId ? 'Edit Message' : 'Save Message';
   updateCharCount('message-prompt', 'prompt-char-count');
@@ -3401,7 +3412,10 @@ function handleSaveMessage() {
   const tags    = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
 
   const selectedChip = document.querySelector('#message-platform-chips .reason-chip.selected');
-  const platform = selectedChip?.dataset.platform || 'Claude';
+  const customPlatform = document.getElementById('message-custom-platform')?.value.trim();
+  const platform = (selectedChip?.dataset.platform === 'Other' && customPlatform)
+    ? customPlatform
+    : (selectedChip?.dataset.platform || 'Claude');
 
   if (!prompt && !reply) { showWarn('Add at least a prompt or a reply'); return; }
 
@@ -3479,11 +3493,29 @@ document.addEventListener('DOMContentLoaded', () => {
   // Save button
   document.getElementById('save-message-btn')?.addEventListener('click', handleSaveMessage);
 
+  // Reset custom platform input when modal closes
+  document.querySelector('#modal-message .modal-close')?.addEventListener('click', () => {
+    const ci = document.getElementById('message-custom-platform');
+    if (ci) { ci.style.display = 'none'; ci.value = ''; }
+  });
+  document.querySelector('#modal-message [data-modal="modal-message"]')?.addEventListener('click', () => {
+    const ci = document.getElementById('message-custom-platform');
+    if (ci) { ci.style.display = 'none'; ci.value = ''; }
+  });
+
   // Platform chips (scoped to message modal)
   document.querySelectorAll('#message-platform-chips .reason-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       document.querySelectorAll('#message-platform-chips .reason-chip').forEach(c => c.classList.remove('selected'));
       chip.classList.add('selected');
+      const customInput = document.getElementById('message-custom-platform');
+      if (chip.dataset.platform === 'Other') {
+        customInput.style.display = 'block';
+        customInput.focus();
+      } else {
+        customInput.style.display = 'none';
+        customInput.value = '';
+      }
     });
   });
 

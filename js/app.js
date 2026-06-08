@@ -531,6 +531,7 @@ function renderPrompts(query = '') {
         <div class="prompt-card-actions">
           <button onclick="event.stopPropagation();copyPrompt('${p.id}')">Copy</button>
           <button onclick="event.stopPropagation();openPromptModal('${p.id}')">Edit</button>
+          <button onclick="event.stopPropagation();exportPrompt('${p.id}')">↓</button>
           <button class="danger" onclick="event.stopPropagation();deletePrompt('${p.id}')">Delete</button>
         </div>
       </div>`;
@@ -2174,16 +2175,23 @@ function initExport() {
   if (!btn) return;
   btn.addEventListener('click', async () => {
     const text = buildExportText();
+
+    // Download .txt file
+    const blob = new Blob([text], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `accounts-${new Date().toISOString().slice(0,10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+
+    // Also copy to clipboard
     try {
       await navigator.clipboard.writeText(text);
-      showSuccess('Status copied to clipboard ✓');
-      // Brief visual flash on button
-      btn.classList.add('copied');
-      setTimeout(() => btn.classList.remove('copied'), 1200);
-    } catch (e) {
-      // Fallback: prompt with text
-      prompt('Copy this status:', text);
-    }
+    } catch (_) {}
+
+    showSuccess('Exported ↓');
+    btn.classList.add('copied');
+    setTimeout(() => btn.classList.remove('copied'), 1200);
   });
 }
 
@@ -2651,6 +2659,7 @@ function renderChats(query = '') {
       <div class="chat-actions">
         <button onclick="event.stopPropagation();openChatModal('${chat.id}')">Edit</button>
         ${chat.url ? `<button class="chat-open-btn" data-url="${escHtml(chat.url)}">Open ↗</button>` : ''}
+        <button onclick="event.stopPropagation();exportChat('${chat.id}')">↓</button>
         <button class="danger" onclick="event.stopPropagation();deleteChatById('${chat.id}')">Delete</button>
       </div>
     `;
@@ -2673,6 +2682,25 @@ function deleteChatById(id) {
   saveChats(chats);
   renderChats(document.getElementById('chats-search')?.value || '');
   showToast('Chat removed');
+}
+function exportChat(id) {
+  const chat = loadChats().find(c => c.id === id);
+  if (!chat) return;
+  const lines = [
+    chat.title ? `# ${chat.title}` : '# Saved Chat',
+    `Platform: ${chat.platform || '—'}`,
+    chat.note ? `Note: ${chat.note}` : '',
+    chat.url ? `URL: ${chat.url}` : '',
+    chat.saved_at ? `Saved: ${new Date(chat.saved_at).toLocaleString()}` : '',
+  ].filter(l => l !== null).join('\n');
+
+  const blob = new Blob([lines], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${(chat.title || 'chat').replace(/[^a-z0-9]/gi, '-').toLowerCase()}.txt`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showSuccess('Exported ↓');
 }
 
 // ── Modal ──
@@ -3448,6 +3476,27 @@ function copyMsgPart(msgId, part) {
   if (!msg) return;
   navigator.clipboard.writeText(part === 'prompt' ? (msg.prompt || '') : (msg.reply || ''));
   showSuccess(part === 'prompt' ? 'Prompt copied ✓' : 'Reply copied ✓');
+}
+
+function exportPrompt(id) {
+  const prompt = loadPrompts().find(p => p.id === id);
+  if (!prompt) return;
+  const lines = [
+    prompt.title ? `# ${prompt.title}` : '# Saved Prompt',
+    `Platform: ${prompt.platform || 'Any'}`,
+    `Tag: ${prompt.tag || 'general'}`,
+    prompt.created_at ? `Saved: ${new Date(prompt.created_at).toLocaleString()}` : '',
+    '',
+    prompt.text || '—',
+  ].filter(l => l !== null).join('\n');
+
+  const blob = new Blob([lines], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${(prompt.title || 'prompt').replace(/[^a-z0-9]/gi, '-').toLowerCase()}.txt`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showSuccess('Exported ↓');
 }
 
 function exportMessage(msgId) {

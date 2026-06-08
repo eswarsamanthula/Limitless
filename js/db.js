@@ -178,6 +178,7 @@ async function saveAccount(account) {
         email: account.email,
         account_type: account.account_type,
         project_ids: account.project_ids || [],
+        group_ids: account.group_ids || [],
         note: account.note,
       })
       .eq('id', account.id).eq('user_id', currentUser.id);

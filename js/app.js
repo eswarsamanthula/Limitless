@@ -19,6 +19,7 @@ let state = {
   selectedAccountType: 'free',
   selectedColor: '#6ee7b7',
   countdownIntervals: {},
+  groupFilter: null,
   // Cross-device sync caches (populated from Supabase on app start)
   prompts: [],
   accountTags: {},
@@ -889,7 +890,7 @@ function renderGroupsView() {
     return;
   }
   list.innerHTML = groups.map(g => {
-    const count = (g.account_ids || []).length;
+    const count = state.accounts.filter(a => (a.group_ids || []).includes(g.id)).length;
     return `<div class="group-card" style="--grp-color:${g.color || '#6ee7b7'}" onclick="filterByGroup('${g.id}')"><div class="group-card-name">${escHtml(g.name)}</div><div class="group-card-count">${count} account${count !== 1 ? 's' : ''}</div></div>`;
   }).join('');
 }
@@ -921,8 +922,16 @@ function handleSaveGroup() {
   showToast(id ? 'Group updated' : 'Group created');
 }
 function filterByGroup(groupId) {
+  state.groupFilter = groupId;
+  state.filter = 'all';
+  const groups = loadGroups();
+  const group = groups.find(g => g.id === groupId);
   switchView('dashboard');
-  showToast('Group filtering coming soon — accounts can be assigned to groups in the edit account modal');
+  showToast(`Showing: ${group ? escHtml(group.name) : 'Group'}`);
+  // Reset active filter buttons
+  $$('.filter-btn').forEach(b => b.classList.remove('active'));
+  const allBtn = document.querySelector('.filter-btn[data-filter="all"]');
+  if (allBtn) allBtn.classList.add('active');
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1024,6 +1033,24 @@ const __origRenderDashboard = renderDashboard;
 renderDashboard = function() {
   __origRenderDashboard.call(this);
 
+  // Group filter badge
+  let badge = $('group-filter-badge');
+  if (state.groupFilter) {
+    const groups = loadGroups();
+    const group = groups.find(g => g.id === state.groupFilter);
+    if (!badge) {
+      badge = document.createElement('div');
+      badge.id = 'group-filter-badge';
+      badge.style.cssText = 'display:inline-flex;align-items:center;gap:0.3rem;font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:20px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-muted);cursor:pointer';
+      const filterRow = document.querySelector('.filter-row');
+      if (filterRow) filterRow.after(badge);
+    }
+    badge.innerHTML = `◈ ${escHtml(group ? group.name : 'Group')} <span style="opacity:0.5">✕</span>`;
+    badge.onclick = () => { state.groupFilter = null; $$('.filter-btn').forEach(b => b.classList.remove('active')); const a = document.querySelector('.filter-btn[data-filter="all"]'); if (a) a.classList.add('active'); state.filter = 'all'; renderDashboard(); };
+  } else if (badge) {
+    badge.remove();
+  }
+
   const accounts = filterAccounts(state.accounts, state.filter);
   const grid = $('accounts-grid');
   if (!grid) return;
@@ -1065,6 +1092,10 @@ renderDashboard = function() {
 
 function filterAccounts(accounts, filter) {
   let result = accounts;
+  // Group filter
+  if (state.groupFilter) {
+    result = result.filter(a => (a.group_ids || []).includes(state.groupFilter));
+  }
   // Status filter
   if (filter === 'available') result = result.filter(a => !isOnCooldown(a));
   else if (filter === 'cooldown') result = result.filter(a => isOnCooldown(a));
@@ -1370,6 +1401,22 @@ function openAccountModal(accountId = null) {
     `).join('');
   }
 
+  // Populate group checkboxes
+  const groupsContainer = $('account-groups-list');
+  const currentGroupIds = account?.group_ids || [];
+  const groups = loadGroups();
+  if (groups.length === 0) {
+    groupsContainer.innerHTML = '<span class="checklist-empty">No groups yet — <button class="btn-link small" onclick="closeModal(\'modal-account\');switchView(\'groups\')" style="font-size:inherit">create one</button></span>';
+  } else {
+    groupsContainer.innerHTML = groups.map(g => `
+      <label class="checklist-item">
+        <input type="checkbox" value="${g.id}" ${currentGroupIds.includes(g.id) ? 'checked' : ''} />
+        <span class="checklist-dot" style="background:${g.color || '#6ee7b7'}"></span>
+        <span class="checklist-name">${escHtml(g.name)}</span>
+      </label>
+    `).join('');
+  }
+
   openModal('modal-account');
 }
 
@@ -1386,6 +1433,7 @@ async function handleSaveAccount() {
     email,
     account_type: state.selectedAccountType,
     project_ids: Array.from($('account-projects-list').querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value),
+    group_ids: Array.from($('account-groups-list').querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value),
     note: $('account-note').value.trim() || null,
   };
 
@@ -1763,6 +1811,7 @@ function bindUIEvents() {
   $$('.filter-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       state.filter = btn.dataset.filter;
+      state.groupFilter = null;
       $$('.filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       renderDashboard();

@@ -12,7 +12,14 @@ let _realtimeCallback = null;
 function initSupabase() {
   if (SUPABASE_URL === 'YOUR_SUPABASE_URL') return false;
   try {
-    _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: true,
+        storage: localStorage,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    });
     return true;
   } catch (e) {
     console.warn('Supabase init failed:', e);
@@ -53,6 +60,7 @@ async function signInWithEmail(email, password) {
 // ─── AUTH — SIGN OUT ─────────────────────────────────────────
 async function signOut() {
   unsubscribeFromRealtime();
+  localStorage.removeItem('limitless_logged_in');
   if (_sb) await _sb.auth.signOut();
   currentUser = null;
 }

@@ -55,15 +55,16 @@ async function init() {
       try {
         if (!session) {
           if (event === 'SIGNED_OUT') {
+            localStorage.removeItem('limitless_logged_in');
             _showAppGuard = false;
             state.accounts = [];
             state.projects = [];
             showAuth();
-          } else {
-            showSessionBanner();
           }
+          // Silent on other null-session events (token refresh glitch, etc.)
           return;
         }
+        localStorage.setItem('limitless_logged_in', '1');
         hideSessionBanner();
         if (!_showAppGuard) {
           await showApp(session.user);
@@ -73,17 +74,16 @@ async function init() {
       }
     });
 
-    try {
-      const session = await getSession();
-      if (session && !_showAppGuard) {
-        await showApp(session.user);
-      } else if (!session) {
-        showAuth();
-      }
-    } catch (e) {
-      console.error('Session error:', e);
-      showAuth();
-      showWarn('Connection issue — sign in again when ready');
+    // Backup: if we've been logged in before but onAuthChange delivered no session,
+    // try getSession once (covers edge case where Supabase persistence was slow).
+    const hasLoggedInBefore = localStorage.getItem('limitless_logged_in');
+    if (hasLoggedInBefore && !_showAppGuard) {
+      try {
+        const session = await getSession();
+        if (session) {
+          await showApp(session.user);
+        }
+      } catch (_) {}
     }
   }
 

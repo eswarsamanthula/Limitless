@@ -2751,6 +2751,12 @@ select option { background: var(--bg-card); }
   font-family: var(--font-mono); font-size: 0.75rem; color: var(--text);
   outline: none; width: 80px;
 }
+#account-price {
+  padding: 0.4rem 0.6rem; background: var(--bg-input);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-family: var(--font-mono); font-size: 0.75rem; color: var(--text);
+  outline: none; width: 120px;
+}
 
 /* A — ONBOARDING FLOW */
 .onboarding-overlay {

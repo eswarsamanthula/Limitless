@@ -147,6 +147,12 @@ async function showApp(user) {
       if (userData.streak) state.streak = userData.streak;
       if (userData.messages) { state.messages = userData.messages; saveMessages(userData.messages); }
       if (userData.limitHitTimeline) state.limitHitTimeline = userData.limitHitTimeline;
+      // Sync email alerts preference from Supabase → localStorage (so edge function + client agree)
+      if (userData.email_alerts === false) {
+        localStorage.setItem('limitless_email_alerts', 'off');
+      } else if (userData.email_alerts === true) {
+        localStorage.setItem('limitless_email_alerts', 'on');
+      }
     } catch (e) {
       console.warn('Could not load user data from server, using defaults');
     }
@@ -179,6 +185,11 @@ async function showApp(user) {
             if (userData.streak) state.streak = userData.streak;
             if (userData.messages) { state.messages = userData.messages; saveMessages(userData.messages); }
             if (userData.limitHitTimeline) state.limitHitTimeline = userData.limitHitTimeline;
+            if (userData.email_alerts === false) {
+              localStorage.setItem('limitless_email_alerts', 'off');
+            } else if (userData.email_alerts === true) {
+              localStorage.setItem('limitless_email_alerts', 'on');
+            }
           } catch (_) {}
           renderView();
         }
@@ -3257,6 +3268,10 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('limitless_email_alerts', next);
     $('settings-email-toggle').textContent = next === 'off' ? 'OFF' : 'ON';
     $('settings-email-toggle').className = next === 'off' ? 'btn-ghost small danger' : 'btn-ghost small';
+    // Save to Supabase so the edge function respects the preference
+    if (typeof setUserData === 'function') {
+      setUserData('email_alerts', next === 'on').catch(() => {});
+    }
     // If turning on, init EmailJS (may not have been inited if it was off)
     if (next === 'on' && typeof emailjs !== 'undefined') {
       emailjs.init(EMAILJS_PUBLIC_KEY);

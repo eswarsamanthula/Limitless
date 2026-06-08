@@ -1392,7 +1392,6 @@ function scheduleResetCheck() {
       const delay = resetAt - new Date();
       if (delay > 0 && delay < 60000) { // within next minute
         _resetTimeouts[account.id] = setTimeout(() => {
-          notifyReset(account);
           triggerResetPulse(account.id);
           setTimeout(() => clearLimit(account.id).then(() => loadAll()).then(renderView), 600);
           delete _resetTimeouts[account.id];

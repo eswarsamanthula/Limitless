@@ -121,11 +121,6 @@ function fireNotification(platform, accountEmail) {
   if (typeof addNotifHistory === 'function') {
     addNotifHistory(platform, accountEmail);
   }
-
-  // Re-check toggle here (in addition to inside sendEmailNotification)
-  if (localStorage.getItem('limitless_email_alerts') !== 'off') {
-    sendEmailNotification(platform, accountEmail);
-  }
 }
 
 // ─── NOTIFY RESET (called from app.js countdowntick) ─────────

@@ -1290,6 +1290,7 @@ select option { background: var(--bg-card); }
 }
 .tag.free { background: var(--bg-subtle); color: var(--text-faint); border: 1px solid var(--border); }
 .tag.pro  { background: #d4af37; color: #000; border: 1px solid transparent; }
+.tag.custom { background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); }
 .tag.project { background: color-mix(in srgb, var(--proj-color,#6ee7b7) 15%, transparent); color: var(--proj-color,#6ee7b7); border: 1px solid color-mix(in srgb, var(--proj-color,#6ee7b7) 40%, transparent); }
 
 /* ─── CARD FIXES ─── */

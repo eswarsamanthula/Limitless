@@ -32,6 +32,12 @@ let state = {
   limitHitTimeline: [],
 };
 window.state = state; // expose for FAB + other modules
+function isPaidType(type) { return type && type !== 'free'; }
+function typeTag(type) {
+  if (type === 'pro') return `<span class="tag pro">PRO</span>`;
+  if (type === 'free') return `<span class="tag free">FREE</span>`;
+  return `<span class="tag custom">${escHtml(type.toUpperCase())}</span>`;
+}
 
 // ─── DOM REFS ────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -606,7 +612,8 @@ async function handleBulkImport() {
     if (parts.length < 2) continue;
     const platform = parts[0];
     const email = parts[1];
-    const type = (parts[2] || 'free').toLowerCase() === 'pro' ? 'pro' : 'free';
+    const raw = (parts[2] || 'free').toLowerCase();
+    const type = raw === 'pro' ? 'pro' : raw === 'free' ? 'free' : raw;
     try {
       await saveAccount({ platform, email, account_type: type, project_ids: [], note: null });
       imported++;
@@ -806,13 +813,13 @@ function renderCost() {
   const proEl = document.getElementById('cost-pro-count');
   const breakdown = document.getElementById('cost-breakdown');
   if (!totalEl) return;
-  const proAccounts = state.accounts.filter(a => a.account_type === 'pro');
-  const freeAccounts = state.accounts.filter(a => a.account_type !== 'pro');
+  const paidAccounts = state.accounts.filter(a => isPaidType(a.account_type));
+  const freeAccounts = state.accounts.filter(a => !isPaidType(a.account_type));
   const prices = loadCostPrices();
   let total = 0;
   const platCosts = {};
   state.accounts.forEach(a => {
-    if (a.account_type === 'pro') {
+    if (isPaidType(a.account_type)) {
       const cost = prices[a.platform] || 20;
       platCosts[a.platform] = (platCosts[a.platform] || 0) + cost;
       total += cost;
@@ -820,14 +827,14 @@ function renderCost() {
   });
   totalEl.textContent = `$${total}`;
   freeEl.textContent = freeAccounts.length;
-  proEl.textContent = proAccounts.length;
-  if (proAccounts.length === 0) {
-    breakdown.innerHTML = '<div class="report-empty" style="padding:1rem">No pro accounts yet</div>';
+  proEl.textContent = paidAccounts.length;
+  if (paidAccounts.length === 0) {
+    breakdown.innerHTML = '<div class="report-empty" style="padding:1rem">No paid accounts yet</div>';
   } else {
     breakdown.innerHTML = Object.entries(platCosts).map(([plat, cost]) => {
       const color = PLATFORM_COLORS[plat] || '#888';
-      const count = proAccounts.filter(a => a.platform === plat).length;
-      return `<div class="cost-row"><span class="cost-row-dot" style="background:${color}"></span><span class="cost-row-name">${escHtml(plat)}</span><span class="cost-row-type">${count} pro</span><span class="cost-row-amt">$${cost}</span></div>`;
+      const count = paidAccounts.filter(a => a.platform === plat).length;
+      return `<div class="cost-row"><span class="cost-row-dot" style="background:${color}"></span><span class="cost-row-name">${escHtml(plat)}</span><span class="cost-row-type">${count} paid</span><span class="cost-row-amt">$${cost}</span></div>`;
     }).join('');
   }
   renderCostEditGrid(prices);
@@ -841,7 +848,7 @@ function loadCostPrices() {
 function renderCostEditGrid(prices) {
   const grid = document.getElementById('cost-edit-grid');
   if (!grid) return;
-  const allPlatforms = [...new Set([...state.accounts.filter(a => a.account_type === 'pro').map(a => a.platform), ...Object.keys(DEFAULT_PRICES)])];
+  const allPlatforms = [...new Set([...state.accounts.filter(a => isPaidType(a.account_type)).map(a => a.platform), ...Object.keys(DEFAULT_PRICES)])];
   grid.innerHTML = allPlatforms.map(p => `
     <div class="cost-edit-field">
       <label>${escHtml(p)}</label>
@@ -995,7 +1002,7 @@ function renderRotation() {
         <div class="rotation-platform">${escHtml(a.platform)}</div>
         <div class="rotation-email">${escHtml(a.email || '—')}${tagHtml}</div>
       </div>
-      <span class="rotation-status">${a.account_type === 'pro' ? '<span class="tag pro">PRO</span>' : '<span class="tag free">FREE</span>'}</span>
+      <span class="rotation-status">${typeTag(a.account_type)}</span>
     </div>`;
   }).join('');
 }
@@ -1186,9 +1193,7 @@ function buildAccountCard(account, index) {
   const statusLabel = cooldown ? 'On Cooldown' : 'Available';
   const statusDot = cooldown ? '●' : '●';
 
-  const typeTag = account.account_type === 'pro'
-    ? `<span class="tag pro">PRO</span>`
-    : `<span class="tag free">FREE</span>`;
+  const typeTagHtml = typeTag(account.account_type);
 
   const NOTE_ICONS = { Message:'💬', Image:'🖼', Code:'⌨', Search:'🔍' };
   const noteIcon = NOTE_ICONS[account.limit_note] || '📝';
@@ -1207,7 +1212,7 @@ function buildAccountCard(account, index) {
         <span style="background:${color};width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0"></span>
         <span style="font-size:0.75rem;font-weight:500;color:var(--text-muted)">${escHtml(account.platform)}</span>
       </div>
-      ${typeTag}
+      ${typeTagHtml}
     </div>
     <div class="card-email">${escHtml(account.email || '—')}</div>
     ${accountProjects.length ? `<div class="card-project-tags">${projectTag}</div>` : ''}
@@ -1259,7 +1264,7 @@ function renderAccountsList() {
       <div class="list-main">
         <div class="list-title">${escHtml(account.platform)} · ${escHtml(account.email || '—')}</div>
         <div class="list-sub">
-          ${account.account_type?.toUpperCase() || 'FREE'}
+          ${escHtml(account.account_type?.toUpperCase() || 'FREE')}
           ${accountProjects.length ? ' · ' + accountProjects.map(p => escHtml(p.name)).join(', ') : ''}
           · <span class="${cooldown ? 'text-amber' : 'text-green'}">${cooldown ? 'On Cooldown' : 'Available'}</span>
         </div>
@@ -1416,10 +1421,15 @@ function openAccountModal(accountId = null) {
 
   // Type toggle
   const type = account?.account_type || 'free';
-  state.selectedAccountType = type;
+  state.selectedAccountType = ['free','pro'].includes(type) ? type : 'other';
   $$('.toggle-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.type === type);
+    btn.classList.toggle('active', btn.dataset.type === state.selectedAccountType);
   });
+  const custWrapper = document.getElementById('custom-type-wrapper');
+  const custInput = document.getElementById('custom-account-type');
+  if (custWrapper) custWrapper.classList.toggle('hidden', state.selectedAccountType !== 'other');
+  if (custInput && !['free','pro'].includes(type)) custInput.value = type;
+  else if (custInput) custInput.value = '';
 
   // Populate project checkboxes
   const container = $('account-projects-list');
@@ -1466,7 +1476,9 @@ async function handleSaveAccount() {
     id: state.editingAccountId || undefined,
     platform,
     email,
-    account_type: state.selectedAccountType,
+    account_type: state.selectedAccountType === 'other'
+      ? (document.getElementById('custom-account-type')?.value.trim() || 'free')
+      : state.selectedAccountType,
     project_ids: Array.from($('account-projects-list').querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value),
     group_ids: Array.from($('account-groups-list').querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value),
     note: $('account-note').value.trim() || null,
@@ -1811,6 +1823,8 @@ function bindUIEvents() {
       state.selectedAccountType = btn.dataset.type;
       $$('.toggle-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      const w = document.getElementById('custom-type-wrapper');
+      if (w) w.classList.toggle('hidden', btn.dataset.type !== 'other');
     });
   });
 
@@ -2174,7 +2188,7 @@ function buildExportText() {
     } else {
       status = '✓ Ready';
     }
-    const type = a.account_type === 'pro' ? 'Pro' : 'Free';
+    const type = a.account_type === 'pro' ? 'Pro' : a.account_type === 'free' ? 'Free' : a.account_type;
     return `${a.platform} [${type}] ${a.email || '—'} — ${status}`;
   });
 

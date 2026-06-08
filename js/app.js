@@ -138,6 +138,7 @@ async function showApp(user) {
       if (userData.chats) state.chats = userData.chats;
       if (userData.notifHistory) state.notifHistory = userData.notifHistory;
       if (userData.streak) state.streak = userData.streak;
+      if (userData.messages) { state.messages = userData.messages; saveMessages(userData.messages); }
     } catch (e) {
       console.warn('Could not load user data from server, using defaults');
     }
@@ -168,6 +169,7 @@ async function showApp(user) {
             if (userData.chats) state.chats = userData.chats;
             if (userData.notifHistory) state.notifHistory = userData.notifHistory;
             if (userData.streak) state.streak = userData.streak;
+            if (userData.messages) { state.messages = userData.messages; saveMessages(userData.messages); }
           } catch (_) {}
           renderView();
         }
@@ -3427,13 +3429,16 @@ function handleSaveMessage() {
     msgs.unshift({ id: Date.now().toString(), title, prompt, reply, tags, platform, created_at: new Date().toISOString() });
   }
   saveMessages(msgs);
+  if (typeof setUserData === 'function') setUserData('messages', msgs).catch(() => {});
   closeModal('modal-message');
   renderMessages(document.getElementById('messages-search')?.value || '');
   showSuccess(id ? 'Message updated ✓' : 'Message saved ✦');
 }
 
 function deleteMessage(msgId) {
-  saveMessages(loadMessages().filter(m => m.id !== msgId));
+  const updated = loadMessages().filter(m => m.id !== msgId);
+  saveMessages(updated);
+  if (typeof setUserData === 'function') setUserData('messages', updated).catch(() => {});
   renderMessages(document.getElementById('messages-search')?.value || '');
   showSuccess('Message deleted');
 }

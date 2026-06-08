@@ -5,6 +5,8 @@
 
 let _sb = null;
 let currentUser = null;
+let _channels = [];
+let _realtimeCallback = null;
 
 // ─── INIT ───────────────────────────────────────────────────
 function initSupabase() {
@@ -50,6 +52,7 @@ async function signInWithEmail(email, password) {
 
 // ─── AUTH — SIGN OUT ─────────────────────────────────────────
 async function signOut() {
+  unsubscribeFromRealtime();
   if (_sb) await _sb.auth.signOut();
   currentUser = null;
 }
@@ -238,4 +241,29 @@ async function deleteAllUserData() {
   await _sb.from('accounts').delete().eq('user_id', currentUser.id);
   await _sb.from('projects').delete().eq('user_id', currentUser.id);
   await _sb.from('user_data').delete().eq('user_id', currentUser.id);
+}
+
+// ─── REALTIME — LIVE CROSS-DEVICE SYNC ──────────────────────
+function subscribeToRealtime(callback) {
+  _realtimeCallback = callback;
+  if (!_sb || !currentUser) return;
+  const uid = currentUser.id;
+  const tables = ['accounts', 'projects', 'user_data'];
+  tables.forEach(table => {
+    const channel = _sb.channel(`live-${table}-${uid}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table, filter: `user_id=eq.${uid}` },
+        () => { if (_realtimeCallback) _realtimeCallback(table); }
+      )
+      .subscribe((status) => {
+        if (status !== 'SUBSCRIBED') console.warn('Realtime not available for', table, status);
+      });
+    _channels.push(channel);
+  });
+}
+
+function unsubscribeFromRealtime() {
+  _channels.forEach(ch => _sb?.removeChannel(ch));
+  _channels = [];
+  _realtimeCallback = null;
 }

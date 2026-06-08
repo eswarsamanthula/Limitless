@@ -146,6 +146,33 @@ async function showApp(user) {
   initNotifications();
   if (typeof window.initStreakUI === 'function') window.initStreakUI();
   setTimeout(() => { if (typeof updateBellState === 'function') updateBellState(); }, 100);
+
+  // Live cross-device sync — re-fetch data when another device makes changes
+  if (typeof subscribeToRealtime === 'function') {
+    let _rtTimer;
+    subscribeToRealtime((table) => {
+      clearTimeout(_rtTimer);
+      _rtTimer = setTimeout(async () => {
+        showSuccess('Live sync update received');
+        if (table === 'accounts' || table === 'projects') {
+          await loadAll();
+          renderView();
+        } else if (table === 'user_data') {
+          try {
+            const userData = await loadAllUserData();
+            if (userData.prompts) state.prompts = userData.prompts;
+            if (userData.accountTags) state.accountTags = userData.accountTags;
+            if (userData.costPrices) state.costPrices = userData.costPrices;
+            if (userData.groups) state.groups = userData.groups;
+            if (userData.chats) state.chats = userData.chats;
+            if (userData.notifHistory) state.notifHistory = userData.notifHistory;
+            if (userData.streak) state.streak = userData.streak;
+          } catch (_) {}
+          renderView();
+        }
+      }, 500);
+    });
+  }
 }
 
 // ─── DATA LOADING ─────────────────────────────────────────────
@@ -1710,6 +1737,7 @@ function bindUIEvents() {
 
   $('signout-btn').addEventListener('click', async () => {
     await signOut();
+    if (typeof unsubscribeFromRealtime === 'function') unsubscribeFromRealtime();
     _showAppGuard = false;
     state.accounts = [];
     state.projects = [];

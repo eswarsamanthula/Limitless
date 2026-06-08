@@ -28,6 +28,7 @@ let state = {
   chats: [],
   notifHistory: [],
   streak: { streak: 0, lastLog: '', history: [] },
+  messages: [],
 };
 window.state = state; // expose for FAB + other modules
 
@@ -142,9 +143,9 @@ async function showApp(user) {
     }
   }
 
-  if (typeof window.initStreakUI === 'function') window.initStreakUI();
   renderView();
   initNotifications();
+  if (typeof window.initStreakUI === 'function') window.initStreakUI();
   setTimeout(() => { if (typeof updateBellState === 'function') updateBellState(); }, 100);
 
   // Live cross-device sync — re-fetch data when another device makes changes
@@ -168,7 +169,6 @@ async function showApp(user) {
             if (userData.notifHistory) state.notifHistory = userData.notifHistory;
             if (userData.streak) state.streak = userData.streak;
           } catch (_) {}
-          if (typeof window.initStreakUI === 'function') window.initStreakUI();
           renderView();
         }
       }, 500);
@@ -217,7 +217,7 @@ function switchView(view) {
   const titles = { dashboard: 'Dashboard', accounts: 'Accounts', projects: 'Projects', timeline: 'Timeline', chats: 'Saved Chats', compare: 'Compare Models', report: 'Weekly Report', prompts: 'Prompt Library', cost: 'Cost Tracker', heatmap: 'Limit Heatmap', rotation: 'Rotation Planner', groups: 'Account Groups', settings: 'Profile & Settings' };
   $('view-title').textContent = titles[view] || view;
 
-  const actionLabels = { dashboard: '+ Add Account', accounts: '+ Add Account', projects: '+ Add Project', timeline: '+ Add Account', chats: '+ Save Chat', compare: '', report: '', prompts: '+ Add Prompt', cost: '', heatmap: '', rotation: '', groups: '+ New Group', settings: '' };
+  const actionLabels = { dashboard: '+ Add Account', accounts: '+ Add Account', projects: '+ Add Project', timeline: '+ Add Account', messages: '+ Save Message', chats: '+ Save Chat', compare: '', report: '', prompts: '+ Add Prompt', cost: '', heatmap: '', rotation: '', groups: '+ New Group', settings: '' };
   $('topbar-action').textContent = actionLabels[view];
 
   closeSidebar();
@@ -229,6 +229,7 @@ function renderView() {
   else if (state.currentView === 'accounts') renderAccountsList();
   else if (state.currentView === 'projects') renderProjectsList();
   else if (state.currentView === 'timeline') renderTimeline();
+  else if (state.currentView === 'messages') renderMessages();
   else if (state.currentView === 'chats') renderChats();
   else if (state.currentView === 'compare') renderCompare();
   else if (state.currentView === 'report') renderReport();
@@ -432,44 +433,27 @@ function addPredictionToCard(card, account) {
 //  U — SYNC BADGE
 // ═══════════════════════════════════════════════════════════════
 let _lastSyncTime = null;
-function updateSyncBadge(failed) {
+function updateSyncBadge() {
   const el = document.getElementById('sync-badge');
-  const dot = el?.querySelector('.sync-badge-dot');
   const text = document.getElementById('sync-text');
   if (!el || !text) return;
-  el.classList.remove('syncing', 'sync-error', 'sync-offline');
-  if (!navigator.onLine) {
-    el.classList.add('sync-offline');
-    if (dot) dot.style.background = 'var(--text-faint)';
-    text.textContent = 'Offline';
-  } else if (failed) {
-    el.classList.add('sync-error');
-    if (dot) dot.style.background = 'var(--amber)';
-    text.textContent = 'Sync failed';
-  } else {
-    _lastSyncTime = new Date();
-    if (dot) dot.style.background = 'var(--green)';
-    text.textContent = 'Synced';
-  }
+  _lastSyncTime = new Date();
+  el.classList.remove('syncing');
+  text.textContent = 'Synced';
 }
 function markSyncing() {
   const el = document.getElementById('sync-badge');
-  const dot = el?.querySelector('.sync-badge-dot');
   const text = document.getElementById('sync-text');
   if (!el || !text) return;
   el.classList.add('syncing');
-  el.classList.remove('sync-error', 'sync-offline');
-  if (dot) dot.style.background = 'var(--amber)';
   text.textContent = 'Syncing…';
 }
 // Patch loadAll to update sync badge
 const _origLoadAll = loadAll;
 loadAll = async function(opts = {}) {
   markSyncing();
-  let failed = false;
   try { return await _origLoadAll(opts); }
-  catch (e) { failed = true; throw e; }
-  finally { updateSyncBadge(failed); }
+  finally { updateSyncBadge(); }
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -1783,6 +1767,7 @@ function bindUIEvents() {
   // Topbar action
   $('topbar-action').addEventListener('click', () => {
     if (state.currentView === 'projects') openProjectModal();
+    else if (state.currentView === 'messages') openMessageModal();
     else if (state.currentView === 'chats') openChatModal();
     else if (state.currentView === 'prompts') openPromptModal();
     else if (state.currentView === 'groups') openGroupModal();
@@ -1967,7 +1952,7 @@ function bindUIEvents() {
 
 // ─── CLEAR LOCALSTORAGE SYNC KEYS ────────────────────────────
 function clearLocalStorageSyncKeys() {
-  ['limitless_prompts','limitless_account_tags','limitless_cost_prices','limitless_groups','limitless_chats','limitless_notif_history','limitless_streak','limitless_streak_last_log','limitless_streak_history'].forEach(k => localStorage.removeItem(k));
+  ['limitless_prompts','limitless_account_tags','limitless_cost_prices','limitless_groups','limitless_chats','limitless_notif_history','limitless_streak','limitless_streak_last_log','limitless_streak_history','limitless_messages'].forEach(k => localStorage.removeItem(k));
 }
 
 // ─── TOAST ────────────────────────────────────────────────────
@@ -2867,22 +2852,14 @@ function renderCompare() {
   const HISTORY_KEY    = 'limitless_streak_history'; // array of ISO date strings
 
   // ── Helpers ─────────────────────────────────────────────
-  function localDateStr(d) {
-    // Use LOCAL date (not UTC) so midnight IST is not treated as yesterday UTC
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-  }
-
   function todayStr() {
-    return localDateStr(new Date());
+    return new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
   }
 
   function yesterdayStr() {
     const d = new Date();
     d.setDate(d.getDate() - 1);
-    return localDateStr(d);
+    return d.toISOString().slice(0, 10);
   }
 
   function getStreakData() {
@@ -3004,19 +2981,16 @@ function renderCompare() {
 
   // ── Public init — called after app loads ─────────────────
   window.initStreakUI = function () {
+    const { streak, history } = getStreakData();
+    // Check if streak is stale (last log was > yesterday → streak resets to 0)
     const data = getStreakData();
     const today = todayStr();
     const yesterday = yesterdayStr();
     let currentStreak = data.streak;
-    // If streak is stale (last log was before yesterday) → display 0
-    // but do NOT saveStreakData here — it would overwrite valid Supabase data
-    // with a local 0 before the server has had a chance to sync.
-    // The streak will be reset to 1 properly the next time recordActivity() fires.
     if (data.lastLog && data.lastLog !== today && data.lastLog !== yesterday) {
+      // Streak broken
       currentStreak = 0;
-      // Only persist the reset locally; don't push to Supabase here
-      state.streak = { streak: 0, lastLog: data.lastLog, history: data.history };
-      localStorage.setItem('limitless_streak', '0');
+      saveStreakData({ streak: 0, lastLog: data.lastLog, history: data.history });
     }
     renderStreakEverywhere(currentStreak, data.history);
   };
@@ -3234,6 +3208,7 @@ document.addEventListener('DOMContentLoaded', () => {
       state.costPrices = {};
       state.groups = [];
       state.chats = [];
+      state.messages = [];
       state.notifHistory = [];
       state.streak = { streak: 0, lastLog: '', history: [] };
       showAuth();
@@ -3268,4 +3243,251 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  MESSAGES — Save full conversations (prompt + AI reply)
+// ═══════════════════════════════════════════════════════════════
+const MSG_KEY = 'limitless_messages';
+
+function loadMessages() {
+  try { return JSON.parse(localStorage.getItem(MSG_KEY) || '[]'); }
+  catch { return []; }
+}
+
+function saveMessages(msgs) {
+  localStorage.setItem(MSG_KEY, JSON.stringify(msgs));
+  state.messages = msgs;
+}
+
+// ── Render ──────────────────────────────────────────────────
+function renderMessages(query = '') {
+  const list = document.getElementById('messages-list');
+  if (!list) return;
+
+  let msgs = loadMessages();
+
+  if (query) {
+    const q = query.toLowerCase();
+    msgs = msgs.filter(m =>
+      (m.title || '').toLowerCase().includes(q) ||
+      (m.platform || '').toLowerCase().includes(q) ||
+      (m.prompt || '').toLowerCase().includes(q) ||
+      (m.reply || '').toLowerCase().includes(q) ||
+      (m.tags || []).some(t => t.toLowerCase().includes(q))
+    );
+  }
+
+  list.innerHTML = '';
+
+  if (msgs.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <span class="empty-icon">✦</span>
+        <p>${query ? 'No messages match your search.' : 'No messages saved yet.<br/>Save any AI conversation — your prompt and the reply.'}</p>
+        ${!query ? '<button class="btn-primary" onclick="openMessageModal()">+ Save Message</button>' : ''}
+      </div>`;
+    return;
+  }
+
+  msgs.forEach((msg, i) => {
+    const color = window.PLATFORM_COLORS?.[msg.platform] || '#888';
+    const card = document.createElement('div');
+    card.className = 'message-card';
+    card.style.animationDelay = `${i * 25}ms`;
+    const tagsHtml = (msg.tags || []).map(t =>
+      `<span class="msg-tag">${escHtml(t)}</span>`
+    ).join('');
+    const promptPreview = (msg.prompt || '').slice(0, 120);
+    const replyPreview  = (msg.reply  || '').slice(0, 160);
+    const dateStr = msg.created_at
+      ? new Date(msg.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+      : '';
+
+    card.innerHTML = `
+      <div class="msg-card-header">
+        <div class="msg-card-left">
+          <span class="msg-platform-dot" style="background:${color}"></span>
+          <span class="msg-platform-name">${escHtml(msg.platform || '')}</span>
+          ${msg.title ? `<span class="msg-card-title">${escHtml(msg.title)}</span>` : ''}
+        </div>
+        <div class="msg-card-meta">
+          ${dateStr ? `<span class="msg-date">${dateStr}</span>` : ''}
+          <div class="msg-card-actions">
+            <button class="msg-action-btn" title="Edit" onclick="event.stopPropagation();openMessageModal('${msg.id}')">✎</button>
+            <button class="msg-action-btn" title="Copy prompt" onclick="event.stopPropagation();copyMsgPart('${msg.id}','prompt')">⊡</button>
+            <button class="msg-action-btn" title="Export" onclick="event.stopPropagation();exportMessage('${msg.id}')">↓</button>
+            <button class="msg-action-btn danger" title="Delete" onclick="event.stopPropagation();deleteMessage('${msg.id}')">✕</button>
+          </div>
+        </div>
+      </div>
+      <div class="msg-card-body">
+        <div class="msg-bubble msg-bubble-user">
+          <span class="msg-bubble-label">You</span>
+          <div class="msg-bubble-text">${escHtml(promptPreview)}${msg.prompt && msg.prompt.length > 120 ? '<span class="msg-truncate">…</span>' : ''}</div>
+        </div>
+        <div class="msg-bubble msg-bubble-ai">
+          <span class="msg-bubble-label">${escHtml(msg.platform || 'AI')}</span>
+          <div class="msg-bubble-text">${escHtml(replyPreview)}${msg.reply && msg.reply.length > 160 ? '<span class="msg-truncate"> — tap to read more</span>' : ''}</div>
+        </div>
+      </div>
+      ${tagsHtml ? `<div class="msg-card-tags">${tagsHtml}</div>` : ''}
+    `;
+
+    card.addEventListener('click', () => openMessageViewer(msg.id));
+    list.appendChild(card);
+  });
+}
+
+// ── Full viewer modal ──────────────────────────────────────
+function openMessageViewer(msgId) {
+  const msg = loadMessages().find(m => m.id === msgId);
+  if (!msg) return;
+  const color = window.PLATFORM_COLORS?.[msg.platform] || '#888';
+
+  document.getElementById('msg-view-title').textContent = msg.title || 'Message';
+  document.getElementById('msg-view-platform').innerHTML =
+    `<span style="display:inline-flex;align-items:center;gap:0.4rem;font-size:0.75rem;color:var(--text-muted)"><span style="width:7px;height:7px;border-radius:50%;background:${color};flex-shrink:0"></span>${escHtml(msg.platform || '')}</span>`;
+  document.getElementById('msg-view-prompt').textContent = msg.prompt || '—';
+  document.getElementById('msg-view-reply').textContent  = msg.reply  || '—';
+
+  const tagsEl = document.getElementById('msg-view-tags');
+  tagsEl.innerHTML = (msg.tags || []).map(t => `<span class="msg-tag">${escHtml(t)}</span>`).join('');
+
+  // Wire action buttons
+  const copyPromptBtn = document.getElementById('msg-view-copy-prompt');
+  const copyReplyBtn  = document.getElementById('msg-view-copy-reply');
+  const copyBothBtn   = document.getElementById('msg-view-copy-both');
+  const exportBtn     = document.getElementById('msg-view-export');
+
+  copyPromptBtn.onclick = () => { navigator.clipboard.writeText(msg.prompt || ''); showSuccess('Prompt copied ✓'); };
+  copyReplyBtn.onclick  = () => { navigator.clipboard.writeText(msg.reply  || ''); showSuccess('Reply copied ✓'); };
+  copyBothBtn.onclick   = () => {
+    const text = `[My Message]\n${msg.prompt || ''}\n\n[${msg.platform || 'AI'} Reply]\n${msg.reply || ''}`;
+    navigator.clipboard.writeText(text);
+    showSuccess('Both copied ✓');
+  };
+  exportBtn.onclick = () => exportMessage(msgId);
+
+  openModal('modal-message-view');
+}
+
+// ── Save modal ─────────────────────────────────────────────
+function openMessageModal(msgId = null) {
+  const msg = msgId ? loadMessages().find(m => m.id === msgId) : null;
+  document.getElementById('message-id').value = msgId || '';
+  document.getElementById('message-title').value   = msg?.title  || '';
+  document.getElementById('message-prompt').value  = msg?.prompt || '';
+  document.getElementById('message-reply').value   = msg?.reply  || '';
+  document.getElementById('message-tags').value    = (msg?.tags || []).join(', ');
+
+  const savedPlatform = msg?.platform || 'Claude';
+  document.querySelectorAll('#message-platform-chips .reason-chip').forEach(chip => {
+    chip.classList.toggle('selected', chip.dataset.platform === savedPlatform);
+  });
+
+  document.getElementById('modal-message-title').textContent = msgId ? 'Edit Message' : 'Save Message';
+  updateCharCount('message-prompt', 'prompt-char-count');
+  updateCharCount('message-reply',  'reply-char-count');
+  openModal('modal-message');
+}
+
+function handleSaveMessage() {
+  const id      = document.getElementById('message-id').value;
+  const title   = document.getElementById('message-title').value.trim();
+  const prompt  = document.getElementById('message-prompt').value.trim();
+  const reply   = document.getElementById('message-reply').value.trim();
+  const tagsRaw = document.getElementById('message-tags').value.trim();
+  const tags    = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+
+  const selectedChip = document.querySelector('#message-platform-chips .reason-chip.selected');
+  const platform = selectedChip?.dataset.platform || 'Claude';
+
+  if (!prompt && !reply) { showWarn('Add at least a prompt or a reply'); return; }
+
+  let msgs = loadMessages();
+  if (id) {
+    const idx = msgs.findIndex(m => m.id === id);
+    if (idx > -1) msgs[idx] = { ...msgs[idx], title, prompt, reply, tags, platform };
+  } else {
+    msgs.unshift({ id: Date.now().toString(), title, prompt, reply, tags, platform, created_at: new Date().toISOString() });
+  }
+  saveMessages(msgs);
+  closeModal('modal-message');
+  renderMessages(document.getElementById('messages-search')?.value || '');
+  showSuccess(id ? 'Message updated ✓' : 'Message saved ✦');
+}
+
+function deleteMessage(msgId) {
+  saveMessages(loadMessages().filter(m => m.id !== msgId));
+  renderMessages(document.getElementById('messages-search')?.value || '');
+  showSuccess('Message deleted');
+}
+
+function copyMsgPart(msgId, part) {
+  const msg = loadMessages().find(m => m.id === msgId);
+  if (!msg) return;
+  navigator.clipboard.writeText(part === 'prompt' ? (msg.prompt || '') : (msg.reply || ''));
+  showSuccess(part === 'prompt' ? 'Prompt copied ✓' : 'Reply copied ✓');
+}
+
+function exportMessage(msgId) {
+  const msg = loadMessages().find(m => m.id === msgId);
+  if (!msg) return;
+  const lines = [
+    msg.title ? `# ${msg.title}` : '# Saved Message',
+    `Platform: ${msg.platform || '—'}`,
+    msg.tags?.length ? `Tags: ${msg.tags.join(', ')}` : '',
+    msg.created_at ? `Saved: ${new Date(msg.created_at).toLocaleString()}` : '',
+    '',
+    '## My Message',
+    msg.prompt || '—',
+    '',
+    `## ${msg.platform || 'AI'} Reply`,
+    msg.reply || '—',
+  ].filter(l => l !== null).join('\n');
+
+  const blob = new Blob([lines], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${(msg.title || 'message').replace(/[^a-z0-9]/gi, '-').toLowerCase()}.txt`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showSuccess('Exported ↓');
+}
+
+// ── Char counter helper ────────────────────────────────────
+function updateCharCount(textareaId, countId) {
+  const ta = document.getElementById(textareaId);
+  const el = document.getElementById(countId);
+  if (!ta || !el) return;
+  const update = () => { el.textContent = ta.value.length > 0 ? `${ta.value.length} chars` : ''; };
+  update();
+  ta.addEventListener('input', update);
+}
+
+// ── Init ───────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Search
+  document.getElementById('messages-search')?.addEventListener('input', e => {
+    renderMessages(e.target.value);
+  });
+
+  // Add button
+  document.getElementById('add-message-btn')?.addEventListener('click', () => openMessageModal());
+
+  // Save button
+  document.getElementById('save-message-btn')?.addEventListener('click', handleSaveMessage);
+
+  // Platform chips (scoped to message modal)
+  document.querySelectorAll('#message-platform-chips .reason-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('#message-platform-chips .reason-chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+    });
+  });
+
+  // Char counts while typing in modal
+  document.getElementById('message-prompt')?.addEventListener('input', () => updateCharCount('message-prompt', 'prompt-char-count'));
+  document.getElementById('message-reply')?.addEventListener('input',  () => updateCharCount('message-reply',  'reply-char-count'));
 });

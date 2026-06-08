@@ -142,6 +142,9 @@
       </button>
 
       <span class="nav-section-label">Library</span>
+      <button class="nav-item" data-view="messages">
+        <span class="nav-icon">✦</span> Messages
+      </button>
       <button class="nav-item" data-view="chats">
         <span class="nav-icon">◌</span> Saved Chats
       </button>
@@ -386,6 +389,24 @@
 
 
     <!-- SAVED CHATS VIEW -->
+    <!-- MESSAGES VIEW -->
+    <div id="view-messages" class="view">
+      <div class="chats-toolbar">
+        <div class="search-bar">
+          <span class="search-icon">⌕</span>
+          <input type="search" id="messages-search" placeholder="Search messages…" autocomplete="off" />
+        </div>
+        <button class="btn-primary" id="add-message-btn">+ Save Message</button>
+      </div>
+      <div id="messages-list" class="messages-list">
+        <div class="empty-state" id="empty-messages">
+          <span class="empty-icon">✦</span>
+          <p>No messages saved yet.<br/>Save any AI conversation — your prompt and the reply.</p>
+          <button class="btn-primary" onclick="openMessageModal()">+ Save Message</button>
+        </div>
+      </div>
+    </div>
+
     <div id="view-chats" class="view">
       <div class="chats-toolbar">
         <div class="search-bar">
@@ -937,6 +958,76 @@
 </div>
 
 <!-- M — SAVE PROMPT MODAL -->
+<!-- MESSAGES MODAL -->
+<div id="modal-message" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-message-title">Save Message</h3>
+      <button class="modal-close" data-modal="modal-message">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="message-id" />
+      <div class="field-group">
+        <label for="message-title">Title <span class="text-faint" style="opacity:0.5;font-size:0.63rem;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <input type="text" id="message-title" placeholder="e.g. Essay intro, Code fix…" autocomplete="off" />
+      </div>
+      <div class="field-group">
+        <label for="message-platform">Platform</label>
+        <div class="reason-chips" id="message-platform-chips">
+          <button type="button" class="reason-chip selected" data-platform="Claude">Claude</button>
+          <button type="button" class="reason-chip" data-platform="ChatGPT">ChatGPT</button>
+          <button type="button" class="reason-chip" data-platform="Gemini">Gemini</button>
+          <button type="button" class="reason-chip" data-platform="Grok">Grok</button>
+          <button type="button" class="reason-chip" data-platform="Copilot">Copilot</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label for="message-prompt">My Message <span class="msg-char-count" id="prompt-char-count"></span></label>
+        <textarea id="message-prompt" class="textarea-field" rows="3" placeholder="What you sent to the AI…" spellcheck="true"></textarea>
+      </div>
+      <div class="field-group">
+        <label for="message-reply">AI Reply <span class="msg-char-count" id="reply-char-count"></span></label>
+        <textarea id="message-reply" class="textarea-field" rows="4" placeholder="The response you want to keep…" spellcheck="true"></textarea>
+      </div>
+      <div class="field-group">
+        <label for="message-tags">Tags <span class="text-faint" style="opacity:0.5;font-size:0.63rem;text-transform:none;letter-spacing:0">(optional, comma-separated)</span></label>
+        <input type="text" id="message-tags" placeholder="e.g. coding, writing, research" autocomplete="off" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" data-modal="modal-message">Cancel</button>
+      <button class="btn-primary" id="save-message-btn">Save Message ✦</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-message-view" class="modal-backdrop">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <h3 id="msg-view-title">Message</h3>
+      <button class="modal-close" data-modal="modal-message-view">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="msg-view-platform" id="msg-view-platform"></div>
+      <div class="msg-view-block">
+        <div class="msg-view-label">My Message</div>
+        <pre class="msg-view-text" id="msg-view-prompt"></pre>
+      </div>
+      <div class="msg-view-block">
+        <div class="msg-view-label">AI Reply</div>
+        <pre class="msg-view-text" id="msg-view-reply"></pre>
+      </div>
+      <div class="msg-view-tags" id="msg-view-tags"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" id="msg-view-copy-prompt">Copy Prompt</button>
+      <button class="btn-ghost" id="msg-view-copy-reply">Copy Reply</button>
+      <button class="btn-ghost" id="msg-view-copy-both">Copy Both</button>
+      <button class="btn-ghost" id="msg-view-export">Export</button>
+    </div>
+  </div>
+</div>
+
 <div id="modal-prompt" class="modal-backdrop">
   <div class="modal">
     <div class="modal-header">

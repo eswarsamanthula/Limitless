@@ -142,9 +142,9 @@ async function showApp(user) {
     }
   }
 
+  if (typeof window.initStreakUI === 'function') window.initStreakUI();
   renderView();
   initNotifications();
-  if (typeof window.initStreakUI === 'function') window.initStreakUI();
   setTimeout(() => { if (typeof updateBellState === 'function') updateBellState(); }, 100);
 
   // Live cross-device sync — re-fetch data when another device makes changes
@@ -168,6 +168,7 @@ async function showApp(user) {
             if (userData.notifHistory) state.notifHistory = userData.notifHistory;
             if (userData.streak) state.streak = userData.streak;
           } catch (_) {}
+          if (typeof window.initStreakUI === 'function') window.initStreakUI();
           renderView();
         }
       }, 500);
@@ -431,27 +432,44 @@ function addPredictionToCard(card, account) {
 //  U — SYNC BADGE
 // ═══════════════════════════════════════════════════════════════
 let _lastSyncTime = null;
-function updateSyncBadge() {
+function updateSyncBadge(failed) {
   const el = document.getElementById('sync-badge');
+  const dot = el?.querySelector('.sync-badge-dot');
   const text = document.getElementById('sync-text');
   if (!el || !text) return;
-  _lastSyncTime = new Date();
-  el.classList.remove('syncing');
-  text.textContent = 'Synced';
+  el.classList.remove('syncing', 'sync-error', 'sync-offline');
+  if (!navigator.onLine) {
+    el.classList.add('sync-offline');
+    if (dot) dot.style.background = 'var(--text-faint)';
+    text.textContent = 'Offline';
+  } else if (failed) {
+    el.classList.add('sync-error');
+    if (dot) dot.style.background = 'var(--amber)';
+    text.textContent = 'Sync failed';
+  } else {
+    _lastSyncTime = new Date();
+    if (dot) dot.style.background = 'var(--green)';
+    text.textContent = 'Synced';
+  }
 }
 function markSyncing() {
   const el = document.getElementById('sync-badge');
+  const dot = el?.querySelector('.sync-badge-dot');
   const text = document.getElementById('sync-text');
   if (!el || !text) return;
   el.classList.add('syncing');
+  el.classList.remove('sync-error', 'sync-offline');
+  if (dot) dot.style.background = 'var(--amber)';
   text.textContent = 'Syncing…';
 }
 // Patch loadAll to update sync badge
 const _origLoadAll = loadAll;
 loadAll = async function(opts = {}) {
   markSyncing();
+  let failed = false;
   try { return await _origLoadAll(opts); }
-  finally { updateSyncBadge(); }
+  catch (e) { failed = true; throw e; }
+  finally { updateSyncBadge(failed); }
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -2849,14 +2867,22 @@ function renderCompare() {
   const HISTORY_KEY    = 'limitless_streak_history'; // array of ISO date strings
 
   // ── Helpers ─────────────────────────────────────────────
+  function localDateStr(d) {
+    // Use LOCAL date (not UTC) so midnight IST is not treated as yesterday UTC
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
   function todayStr() {
-    return new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
+    return localDateStr(new Date());
   }
 
   function yesterdayStr() {
     const d = new Date();
     d.setDate(d.getDate() - 1);
-    return d.toISOString().slice(0, 10);
+    return localDateStr(d);
   }
 
   function getStreakData() {
@@ -2978,16 +3004,19 @@ function renderCompare() {
 
   // ── Public init — called after app loads ─────────────────
   window.initStreakUI = function () {
-    const { streak, history } = getStreakData();
-    // Check if streak is stale (last log was > yesterday → streak resets to 0)
     const data = getStreakData();
     const today = todayStr();
     const yesterday = yesterdayStr();
     let currentStreak = data.streak;
+    // If streak is stale (last log was before yesterday) → display 0
+    // but do NOT saveStreakData here — it would overwrite valid Supabase data
+    // with a local 0 before the server has had a chance to sync.
+    // The streak will be reset to 1 properly the next time recordActivity() fires.
     if (data.lastLog && data.lastLog !== today && data.lastLog !== yesterday) {
-      // Streak broken
       currentStreak = 0;
-      saveStreakData({ streak: 0, lastLog: data.lastLog, history: data.history });
+      // Only persist the reset locally; don't push to Supabase here
+      state.streak = { streak: 0, lastLog: data.lastLog, history: data.history };
+      localStorage.setItem('limitless_streak', '0');
     }
     renderStreakEverywhere(currentStreak, data.history);
   };

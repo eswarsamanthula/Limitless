@@ -29,6 +29,7 @@ let state = {
   notifHistory: [],
   streak: { streak: 0, lastLog: '', history: [] },
   messages: [],
+  limitHitTimeline: [],
 };
 window.state = state; // expose for FAB + other modules
 
@@ -139,6 +140,7 @@ async function showApp(user) {
       if (userData.notifHistory) state.notifHistory = userData.notifHistory;
       if (userData.streak) state.streak = userData.streak;
       if (userData.messages) { state.messages = userData.messages; saveMessages(userData.messages); }
+      if (userData.limitHitTimeline) state.limitHitTimeline = userData.limitHitTimeline;
     } catch (e) {
       console.warn('Could not load user data from server, using defaults');
     }
@@ -170,6 +172,7 @@ async function showApp(user) {
             if (userData.notifHistory) state.notifHistory = userData.notifHistory;
             if (userData.streak) state.streak = userData.streak;
             if (userData.messages) { state.messages = userData.messages; saveMessages(userData.messages); }
+            if (userData.limitHitTimeline) state.limitHitTimeline = userData.limitHitTimeline;
           } catch (_) {}
           renderView();
         }
@@ -742,7 +745,11 @@ function renderReport() {
     return;
   }
   const coolingAccounts = state.accounts.filter(a => a.reset_at && new Date(a.reset_at) > startOfWeek);
-  const limitsHit = state.accounts.filter(a => a.limit_hit_at && new Date(a.limit_hit_at) >= startOfWeek && new Date(a.limit_hit_at) <= endOfWeek).length;
+  const timeline = state.limitHitTimeline || [];
+  const limitsHit = timeline.filter(e => {
+    const d = new Date(e.date);
+    return d >= startOfWeek && d <= endOfWeek;
+  }).length;
   const platformsUsed = new Set(state.accounts.map(a => a.platform)).size;
   const days = {};
   for (let i = 0; i < 7; i++) {
@@ -750,11 +757,9 @@ function renderReport() {
     d.setDate(d.getDate() + i);
     days[d.toISOString().slice(0,10)] = 0;
   }
-  state.accounts.forEach(a => {
-    if (a.limit_hit_at) {
-      const d = new Date(a.limit_hit_at).toISOString().slice(0,10);
-      if (days[d] !== undefined) days[d]++;
-    }
+  timeline.forEach(e => {
+    const d = new Date(e.date).toISOString().slice(0,10);
+    if (days[d] !== undefined) days[d]++;
   });
   const maxDay = Math.max(1, ...Object.values(days));
   const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
@@ -856,11 +861,9 @@ function renderHeatmap() {
   const startDate = new Date(year, 0, 1);
   const endDate = new Date(year, 11, 31);
   const dayCounts = {};
-  state.accounts.forEach(a => {
-    if (a.limit_hit_at) {
-      const d = new Date(a.limit_hit_at).toISOString().slice(0,10);
-      dayCounts[d] = (dayCounts[d] || 0) + 1;
-    }
+  (state.limitHitTimeline || []).forEach(e => {
+    const d = new Date(e.date).toISOString().slice(0,10);
+    dayCounts[d] = (dayCounts[d] || 0) + 1;
   });
   const dates = [];
   for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
@@ -1533,6 +1536,17 @@ async function handleSaveLimit() {
 
   try {
     await logLimit(accountId, resetAt, note);
+
+    // Append to limit hit timeline for report/heatmap
+    const acct = state.accounts.find(a => a.id === accountId);
+    if (acct) {
+      const entry = { accountId, platform: acct.platform, email: acct.email, date: new Date().toISOString(), note };
+      state.limitHitTimeline = [...(state.limitHitTimeline || []), entry];
+      if (typeof setUserData === 'function') {
+        setUserData('limitHitTimeline', state.limitHitTimeline).catch(() => {});
+      }
+    }
+
     // Record streak BEFORE render so the UI shows the updated count
     if (typeof window.recordStreakActivity === 'function') window.recordStreakActivity();
     await loadAll();
@@ -1540,8 +1554,7 @@ async function handleSaveLimit() {
     closeModal('modal-limit');
     showSuccess('Limit logged ⏱');
     // Schedule a notification
-    const account = state.accounts.find(a => a.id === accountId);
-    if (account) scheduleNotification(account, new Date(resetAt));
+    if (acct) scheduleNotification(acct, new Date(resetAt));
   } catch (e) {
     console.error(e);
     showError('Failed to log limit');

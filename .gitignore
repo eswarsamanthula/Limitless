@@ -12,5 +12,4 @@ Thumbs.db
 *.swp
 *.swo
 
-# Supabase local files
-supabase/
+

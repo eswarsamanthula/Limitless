@@ -820,7 +820,7 @@ function renderCost() {
   const platCosts = {};
   state.accounts.forEach(a => {
     if (isPaidType(a.account_type)) {
-      const cost = prices[a.platform] || 20;
+      const cost = a.price ?? prices[a.platform] ?? 20;
       platCosts[a.platform] = (platCosts[a.platform] || 0) + cost;
       total += cost;
     }
@@ -1431,6 +1431,12 @@ function openAccountModal(accountId = null) {
   if (custInput && !['free','pro'].includes(type)) custInput.value = type;
   else if (custInput) custInput.value = '';
 
+  // Price field
+  const priceWrapper = document.getElementById('account-price-wrapper');
+  const priceInput = document.getElementById('account-price');
+  if (priceWrapper) priceWrapper.classList.toggle('hidden', state.selectedAccountType === 'free');
+  if (priceInput) priceInput.value = account?.price ?? '';
+
   // Populate project checkboxes
   const container = $('account-projects-list');
   const currentIds = account?.project_ids || (account?.project_id ? [account.project_id] : []);
@@ -1482,6 +1488,9 @@ async function handleSaveAccount() {
     project_ids: Array.from($('account-projects-list').querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value),
     group_ids: Array.from($('account-groups-list').querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value),
     note: $('account-note').value.trim() || null,
+    price: document.getElementById('account-price')?.value
+      ? parseFloat(document.getElementById('account-price').value)
+      : null,
   };
 
   try {
@@ -1825,6 +1834,8 @@ function bindUIEvents() {
       btn.classList.add('active');
       const w = document.getElementById('custom-type-wrapper');
       if (w) w.classList.toggle('hidden', btn.dataset.type !== 'other');
+      const pw = document.getElementById('account-price-wrapper');
+      if (pw) pw.classList.toggle('hidden', btn.dataset.type === 'free');
     });
   });
 

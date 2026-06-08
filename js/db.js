@@ -191,6 +191,7 @@ async function saveAccount(account) {
         project_ids: account.project_ids || [],
         group_ids: account.group_ids || [],
         note: account.note,
+        price: account.price ?? null,
       })
       .eq('id', account.id).eq('user_id', currentUser.id);
     if (error) throw error;

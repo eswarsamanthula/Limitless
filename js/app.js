@@ -944,7 +944,16 @@ function renderGroupsView() {
   }
   list.innerHTML = groups.map(g => {
     const count = state.accounts.filter(a => (a.group_ids || []).includes(g.id)).length;
-    return `<div class="group-card" style="--grp-color:${g.color || '#6ee7b7'}" onclick="filterByGroup('${g.id}')"><div class="group-card-name">${escHtml(g.name)}</div><div class="group-card-count">${count} account${count !== 1 ? 's' : ''}</div></div>`;
+    return `<div class="group-card" style="--grp-color:${g.color || '#6ee7b7'}">
+      <div class="group-card-main" onclick="filterByGroup('${g.id}')">
+        <div class="group-card-name">${escHtml(g.name)}</div>
+        <div class="group-card-count">${count} account${count !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="group-card-actions">
+        <button class="group-action-btn" onclick="event.stopPropagation();openGroupModal('${g.id}')" title="Edit">✎</button>
+        <button class="group-action-btn danger" onclick="event.stopPropagation();deleteGroup('${g.id}')" title="Delete">✕</button>
+      </div>
+    </div>`;
   }).join('');
 }
 function openGroupModal(id) {
@@ -973,6 +982,14 @@ function handleSaveGroup() {
   closeModal('modal-group');
   if (state.currentView === 'groups') renderGroupsView();
   showToast(id ? 'Group updated' : 'Group created');
+}
+function deleteGroup(id) {
+  const groups = loadGroups();
+  const group = groups.find(g => g.id === id);
+  if (!group || !confirm(`Delete "${group.name}"?`)) return;
+  saveGroups(groups.filter(g => g.id !== id));
+  renderGroupsView();
+  showToast('Group deleted');
 }
 function filterByGroup(groupId) {
   state.groupFilter = groupId;

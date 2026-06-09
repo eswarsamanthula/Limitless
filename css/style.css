@@ -2854,12 +2854,23 @@ select option { background: var(--bg-card); }
 .group-card {
   background: var(--bg-card); border: 1px solid var(--border);
   border-left: 3px solid var(--grp-color, var(--green));
-  border-radius: var(--radius); padding: 0.85rem 1rem; cursor: pointer;
+  border-radius: var(--radius); padding: 0.85rem 1rem;
   transition: var(--transition); box-shadow: var(--shadow);
+  display: flex; align-items: center;
 }
 .group-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.group-card-main { cursor: pointer; flex: 1; }
 .group-card-name { font-size: 0.85rem; color: var(--text); font-weight: 500; }
 .group-card-count { font-size: 0.65rem; color: var(--text-faint); margin-top: 0.2rem; }
+.group-card-actions { display: flex; gap: 0.25rem; align-items: center; margin-left: 0.5rem; }
+.group-action-btn {
+  background: none; border: none; cursor: pointer;
+  padding: 0.25rem; color: var(--text-muted); font-size: 0.8rem;
+  border-radius: var(--radius-sm); transition: var(--transition);
+  line-height: 1;
+}
+.group-action-btn:hover { background: var(--bg-subtle); color: var(--text); }
+.group-action-btn.danger:hover { color: var(--red); background: color-mix(in srgb, var(--red) 10%, transparent); }
 
 /* U — SYNC BADGE */
 .sync-badge {

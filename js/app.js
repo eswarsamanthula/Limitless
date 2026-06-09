@@ -369,23 +369,19 @@ function renderHealthRing() {
 function renderReasonAnalytics() {
   const container = document.getElementById('reason-bars');
   if (!container) return;
+  const today = new Date().toISOString().slice(0, 10);
+  const todaysHits = (state.limitHitTimeline || []).filter(e => e.date.slice(0, 10) === today);
   const reasons = {};
-  let noReason = 0;
-  const totalLimits = state.accounts.filter(a => a.limit_hit_at).length;
-  state.accounts.forEach(a => {
-    if (!a.limit_hit_at) return;
-    if (a.limit_note) reasons[a.limit_note] = (reasons[a.limit_note] || 0) + 1;
-    else noReason++;
-  });
-  if (noReason) reasons['No reason'] = noReason;
-  const entries = Object.entries(reasons).sort((a,b) => b[1] - a[1]);
+  todaysHits.forEach(e => { const note = e.note || 'No reason'; reasons[note] = (reasons[note] || 0) + 1; });
+  const entries = Object.entries(reasons).sort((a, b) => b[1] - a[1]);
   if (entries.length === 0) {
-    container.innerHTML = '<span style="font-size:0.75rem;color:var(--text-faint);font-style:italic">No limit data yet</span>';
+    container.innerHTML = '<span style="font-size:0.75rem;color:var(--text-faint);font-style:italic">No limits hit today</span>';
     return;
   }
   const maxCount = entries[0][1];
+  const total = todaysHits.length;
   const ICONS = { Message:'💬', Image:'🖼', Code:'⌨', Search:'🔍' };
-  container.innerHTML = `<div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:600">${totalLimits} limit${totalLimits!==1?'s':''} hit</div>` + entries.map(([reason, count]) => {
+  container.innerHTML = `<div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:600">${total} limit${total!==1?'s':''} hit today</div>` + entries.map(([reason, count]) => {
     const pct = maxCount > 0 ? (count / maxCount) * 100 : 0;
     const color = reason === 'Message' ? '#93c5fd' : reason === 'Image' ? '#fca5a5' : reason === 'Code' ? '#6ee7b7' : reason === 'Search' ? '#fcd34d' : '#c4b5fd';
     return `<div class="reason-bar-row">

@@ -30,6 +30,7 @@ let state = {
   streak: { streak: 0, lastLog: '', history: [] },
   messages: [],
   limitHitTimeline: [],
+  ritualSnapshot: null,
 };
 window.state = state; // expose for FAB + other modules
 function isPaidType(type) { return type && type !== 'free'; }
@@ -153,6 +154,7 @@ async function showApp(user) {
       } else if (userData.email_alerts === true) {
         localStorage.setItem('limitless_email_alerts', 'on');
       }
+      if (userData.ritual_today_snapshot) state.ritualSnapshot = userData.ritual_today_snapshot;
     } catch (e) {
       console.warn('Could not load user data from server, using defaults');
     }
@@ -185,6 +187,7 @@ async function showApp(user) {
             if (userData.streak) state.streak = userData.streak;
             if (userData.messages) { state.messages = userData.messages; saveMessages(userData.messages); }
             if (userData.limitHitTimeline) state.limitHitTimeline = userData.limitHitTimeline;
+            if (userData.ritual_today_snapshot) state.ritualSnapshot = userData.ritual_today_snapshot;
             if (userData.email_alerts === false) {
               localStorage.setItem('limitless_email_alerts', 'off');
             } else if (userData.email_alerts === true) {
@@ -1154,6 +1157,8 @@ renderDashboard = function() {
       }
     }
   });
+
+  renderRitualWidget();
 };
 
 function filterAccounts(accounts, filter) {
@@ -1190,6 +1195,56 @@ function filterAccounts(accounts, filter) {
     });
   }
   return result;
+}
+
+// ─── RITUAL WIDGET ─────────────────────────────────────────────
+function renderRitualWidget() {
+  const el = document.getElementById('ritual-widget');
+  if (!el) return;
+  const toggle = localStorage.getItem('limitless_ritual_widget');
+  if (toggle === 'off') { el.style.display = 'none'; return; }
+  el.style.display = '';
+  const snap = state.ritualSnapshot;
+  if (!snap || !snap.total || snap.total === 0) {
+    el.innerHTML = `
+      <div class="ritual-widget-inner">
+        <div class="ritual-widget-header">
+          <span class="ritual-widget-icon">✦</span>
+          <span class="ritual-widget-title">Ritual</span>
+        </div>
+        <div class="ritual-widget-body">
+          <p style="font-size:0.75rem;color:var(--text-muted);margin:0">No habits tracked yet today.</p>
+          <a href="https://appritual.vercel.app" target="_blank" class="btn-ghost small" style="margin-top:0.25rem">Start your habits →</a>
+        </div>
+      </div>`;
+    return;
+  }
+  const circ = 2 * Math.PI * 22;
+  const offset = circ * (1 - snap.pct / 100);
+  el.innerHTML = `
+    <div class="ritual-widget-inner">
+      <div class="ritual-widget-header">
+        <span class="ritual-widget-icon">✦</span>
+        <span class="ritual-widget-title">Ritual</span>
+        <span class="ritual-widget-streak">🔥 ${snap.streak||0} day streak</span>
+      </div>
+      <div class="ritual-widget-body">
+        <div class="ritual-widget-ring">
+          <svg width="52" height="52" viewBox="0 0 52 52">
+            <circle cx="26" cy="26" r="22" fill="none" stroke="var(--ring-track)" stroke-width="3"/>
+            <circle cx="26" cy="26" r="22" fill="none" stroke="#7fb685" stroke-width="3"
+              stroke-dasharray="${circ}" stroke-dashoffset="${offset}"
+              stroke-linecap="round" transform="rotate(-90 26 26)"
+              style="transition:stroke-dashoffset .5s ease"/>
+          </svg>
+          <span class="ritual-widget-pct">${snap.pct}%</span>
+        </div>
+        <div class="ritual-widget-info">
+          <span>${snap.done} of ${snap.total} habits done</span>
+          <a href="https://appritual.vercel.app" target="_blank" class="btn-ghost small">Open Ritual →</a>
+        </div>
+      </div>
+    </div>`;
 }
 
 function isOnCooldown(account) {
@@ -3149,6 +3204,19 @@ function renderSettings() {
     }
   }
 
+  // Ritual widget toggle state
+  const ritualToggle = $('settings-ritual-toggle');
+  if (ritualToggle) {
+    const ritualState = localStorage.getItem('limitless_ritual_widget');
+    if (ritualState === 'off') {
+      ritualToggle.textContent = 'OFF';
+      ritualToggle.className = 'btn-ghost small danger';
+    } else {
+      ritualToggle.textContent = 'ON';
+      ritualToggle.className = 'btn-ghost small';
+    }
+  }
+
   // Notifications status
   const notifStatus = $('settings-notif-status');
   const notifBtn = $('settings-notif-btn');
@@ -3289,6 +3357,17 @@ document.addEventListener('DOMContentLoaded', () => {
       emailjs.init(EMAILJS_PUBLIC_KEY);
     }
     showToast(next === 'off' ? 'Email alerts off' : 'Email alerts on');
+  });
+
+  // Ritual widget toggle
+  $('settings-ritual-toggle')?.addEventListener('click', () => {
+    const cur = localStorage.getItem('limitless_ritual_widget');
+    const next = cur === 'off' ? 'on' : 'off';
+    localStorage.setItem('limitless_ritual_widget', next);
+    $('settings-ritual-toggle').textContent = next === 'off' ? 'OFF' : 'ON';
+    $('settings-ritual-toggle').className = next === 'off' ? 'btn-ghost small danger' : 'btn-ghost small';
+    renderRitualWidget();
+    showToast(next === 'off' ? 'Ritual widget hidden' : 'Ritual widget visible');
   });
 
   // Sign out from settings

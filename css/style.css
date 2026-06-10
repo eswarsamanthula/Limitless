@@ -2564,6 +2564,70 @@ select option { background: var(--bg-card); }
   .dash-widgets { grid-template-columns: 1fr; }
 }
 
+/* ─── RITUAL WIDGET ─────────────────────────────────────────── */
+#ritual-widget {
+  margin-bottom: 1rem;
+}
+.ritual-widget-inner {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+}
+.ritual-widget-header {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+.ritual-widget-icon {
+  font-size: 0.75rem;
+  color: #7fb685;
+}
+.ritual-widget-title {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+}
+.ritual-widget-streak {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+.ritual-widget-body {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.ritual-widget-ring {
+  position: relative;
+  flex-shrink: 0;
+}
+.ritual-widget-pct {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text);
+}
+.ritual-widget-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.ritual-widget-info a {
+  flex-shrink: 0;
+}
+
 /* ════════════════════════════════════════════════════════════
    S — WEEKLY REPORT CARD
    ════════════════════════════════════════════════════════════ */

@@ -154,6 +154,11 @@ async function showApp(user) {
       } else if (userData.email_alerts === true) {
         localStorage.setItem('limitless_email_alerts', 'on');
       }
+      if (userData.ritual_widget_on === false) {
+        localStorage.setItem('limitless_ritual_widget', 'off');
+      } else if (userData.ritual_widget_on === true) {
+        localStorage.setItem('limitless_ritual_widget', 'on');
+      }
       if (userData.ritual_today_snapshot) state.ritualSnapshot = userData.ritual_today_snapshot;
     } catch (e) {
       console.warn('Could not load user data from server, using defaults');
@@ -188,6 +193,11 @@ async function showApp(user) {
             if (userData.messages) { state.messages = userData.messages; saveMessages(userData.messages); }
             if (userData.limitHitTimeline) state.limitHitTimeline = userData.limitHitTimeline;
             if (userData.ritual_today_snapshot) state.ritualSnapshot = userData.ritual_today_snapshot;
+            if (userData.ritual_widget_on === false) {
+              localStorage.setItem('limitless_ritual_widget', 'off');
+            } else if (userData.ritual_widget_on === true) {
+              localStorage.setItem('limitless_ritual_widget', 'on');
+            }
             if (userData.email_alerts === false) {
               localStorage.setItem('limitless_email_alerts', 'off');
             } else if (userData.email_alerts === true) {
@@ -1200,49 +1210,52 @@ function filterAccounts(accounts, filter) {
 // ─── RITUAL WIDGET ─────────────────────────────────────────────
 function renderRitualWidget() {
   const el = document.getElementById('ritual-widget');
-  if (!el) return;
+  const grid = document.getElementById('dash-widgets');
+  if (!el || !grid) return;
   const toggle = localStorage.getItem('limitless_ritual_widget');
-  if (toggle === 'off') { el.style.display = 'none'; return; }
-  el.style.display = '';
+  if (toggle === 'off') {
+    el.innerHTML = '';
+    grid.classList.add('ritual-off');
+    return;
+  }
+  grid.classList.remove('ritual-off');
   const snap = state.ritualSnapshot;
   if (!snap || !snap.total || snap.total === 0) {
     el.innerHTML = `
       <div class="ritual-widget-inner">
-        <div class="ritual-widget-header">
-          <span class="ritual-widget-icon">✦</span>
-          <span class="ritual-widget-title">Ritual</span>
+        <div class="ritual-widget-ring">
+          <svg width="72" height="72" viewBox="0 0 72 72">
+            <circle cx="36" cy="36" r="30" fill="none" stroke="var(--bg-subtle)" stroke-width="4"/>
+          </svg>
         </div>
-        <div class="ritual-widget-body">
-          <p style="font-size:0.75rem;color:var(--text-muted);margin:0">No habits tracked yet today.</p>
-          <a href="https://appritual.vercel.app" target="_blank" class="btn-ghost small" style="margin-top:0.25rem">Start your habits →</a>
+        <div class="ritual-widget-info">
+          <span class="ritual-widget-label">Ritual</span>
+          <span class="ritual-widget-stat">No habits tracked yet today.</span>
+          <a href="https://appritual.vercel.app" target="_blank" class="ritual-widget-btn">Start your habits →</a>
         </div>
       </div>`;
     return;
   }
-  const circ = 2 * Math.PI * 22;
+  const r = 30;
+  const circ = 2 * Math.PI * r;
   const offset = circ * (1 - snap.pct / 100);
   el.innerHTML = `
     <div class="ritual-widget-inner">
-      <div class="ritual-widget-header">
-        <span class="ritual-widget-icon">✦</span>
-        <span class="ritual-widget-title">Ritual</span>
-        <span class="ritual-widget-streak">🔥 ${snap.streak||0} day streak</span>
+      <div class="ritual-widget-ring">
+        <svg width="72" height="72" viewBox="0 0 72 72">
+          <circle cx="36" cy="36" r="${r}" fill="none" stroke="var(--bg-subtle)" stroke-width="4"/>
+          <circle cx="36" cy="36" r="${r}" fill="none" stroke="#7fb685" stroke-width="4"
+            stroke-dasharray="${circ}" stroke-dashoffset="${offset}"
+            stroke-linecap="round" transform="rotate(-90 36 36)"
+            style="transition:stroke-dashoffset .6s cubic-bezier(.4,0,.2,1)"/>
+        </svg>
+        <span class="ritual-widget-pct">${Math.round(snap.pct)}%</span>
       </div>
-      <div class="ritual-widget-body">
-        <div class="ritual-widget-ring">
-          <svg width="52" height="52" viewBox="0 0 52 52">
-            <circle cx="26" cy="26" r="22" fill="none" stroke="var(--ring-track)" stroke-width="3"/>
-            <circle cx="26" cy="26" r="22" fill="none" stroke="#7fb685" stroke-width="3"
-              stroke-dasharray="${circ}" stroke-dashoffset="${offset}"
-              stroke-linecap="round" transform="rotate(-90 26 26)"
-              style="transition:stroke-dashoffset .5s ease"/>
-          </svg>
-          <span class="ritual-widget-pct">${snap.pct}%</span>
-        </div>
-        <div class="ritual-widget-info">
-          <span>${snap.done} of ${snap.total} habits done</span>
-          <a href="https://appritual.vercel.app" target="_blank" class="btn-ghost small">Open Ritual →</a>
-        </div>
+      <div class="ritual-widget-info">
+        <span class="ritual-widget-label">Ritual</span>
+        <span class="ritual-widget-stat">${snap.done} of ${snap.total} habits done</span>
+        <span class="ritual-widget-streak">🔥 ${snap.streak||0} day streak</span>
+        <a href="https://appritual.vercel.app" target="_blank" class="ritual-widget-btn">Open Ritual →</a>
       </div>
     </div>`;
 }
@@ -3359,13 +3372,14 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast(next === 'off' ? 'Email alerts off' : 'Email alerts on');
   });
 
-  // Ritual widget toggle
-  $('settings-ritual-toggle')?.addEventListener('click', () => {
+  // Ritual widget toggle (synced across devices via user_data)
+  $('settings-ritual-toggle')?.addEventListener('click', async () => {
     const cur = localStorage.getItem('limitless_ritual_widget');
     const next = cur === 'off' ? 'on' : 'off';
     localStorage.setItem('limitless_ritual_widget', next);
     $('settings-ritual-toggle').textContent = next === 'off' ? 'OFF' : 'ON';
     $('settings-ritual-toggle').className = next === 'off' ? 'btn-ghost small danger' : 'btn-ghost small';
+    try { await setUserData('ritual_widget_on', next === 'on'); } catch (_) {}
     renderRitualWidget();
     showToast(next === 'off' ? 'Ritual widget hidden' : 'Ritual widget visible');
   });

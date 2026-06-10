@@ -100,7 +100,7 @@ async function init() {
 
 // ─── AUTH SCREENS ─────────────────────────────────────────────
 function showAuth() {
-  $('#loading-screen')?.classList.add('hidden');
+  $('loading-screen')?.classList.add('hidden');
   $('auth-screen').classList.add('active');
   $('app-screen').classList.remove('active');
 }
@@ -108,7 +108,7 @@ function showAuth() {
 async function showApp(user) {
   if (_showAppGuard) return;
   _showAppGuard = true;
-  $('#loading-screen')?.classList.add('hidden');
+  $('loading-screen')?.classList.add('hidden');
 
   // Fetch fresh user profile from server (JWT metadata can be stale across devices)
   if (typeof getFreshUser === 'function') {

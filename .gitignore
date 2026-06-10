@@ -14,3 +14,6 @@ Thumbs.db
 
 # Supabase local files
 supabase/
+
+# Local config (contains real keys — never commit)
+js/config.js

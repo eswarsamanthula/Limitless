@@ -2556,7 +2556,7 @@ select option { background: var(--bg-card); }
 /* ─── DASHBOARD WIDGETS ROW ─── */
 .dash-widgets {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 0.75rem;
   margin-bottom: 1rem;
 }
@@ -2565,9 +2565,6 @@ select option { background: var(--bg-card); }
 }
 
 /* ─── RITUAL WIDGET ─────────────────────────────────────────── */
-#ritual-widget {
-  margin-bottom: 1rem;
-}
 .ritual-widget-inner {
   background: var(--bg-card);
   border: 1px solid var(--border);

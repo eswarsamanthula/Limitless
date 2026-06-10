@@ -929,36 +929,48 @@ function renderHeatmap() {
     dates.push(new Date(d));
   }
   const maxCount = Math.max(1, ...Object.values(dayCounts));
+  const emptyHtml = '<div class="empty-state"><span class="empty-icon">▦</span><p>Not enough data yet.<br/>Log some limits to see your heatmap.</p></div>';
   if (dates.length === 0 || Object.keys(dayCounts).length === 0) {
-    content.innerHTML = '<div class="empty-state"><span class="empty-icon">▦</span><p>Not enough data yet.<br/>Log some limits to see your heatmap.</p></div>';
+    content.innerHTML = emptyHtml;
     return;
   }
-  const grid = document.createElement('div');
-  grid.className = 'heatmap-grid';
-  const monthLabels = document.createElement('div');
-  monthLabels.className = 'heatmap-month-labels';
+
+  // Build both layouts in one pass
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let horizMonthLabels = '<div class="heatmap-month-labels">';
+  let horizGrid = '<div class="heatmap-grid">';
+  let vertHtml = '';
   let currentMonth = -1;
+  let monthCells = [];
+
   dates.forEach(d => {
     const ds = d.toISOString().slice(0,10);
     const count = dayCounts[ds] || 0;
     const level = count === 0 ? 0 : Math.min(5, Math.ceil((count / maxCount) * 5));
-    const cell = document.createElement('div');
-    cell.className = 'heatmap-cell';
-    cell.dataset.level = level;
-    cell.title = `${ds}: ${count} limit${count !== 1 ? 's' : ''}`;
-    grid.appendChild(cell);
+    const title = `${ds}: ${count} limit${count !== 1 ? 's' : ''}`;
+    const cellHtml = `<div class="heatmap-cell" data-level="${level}" title="${title}"></div>`;
+
+    horizGrid += cellHtml;
+
     if (d.getMonth() !== currentMonth) {
+      if (currentMonth >= 0) {
+        vertHtml += `<div class="hmv-row"><span class="hmv-month">${MONTHS[currentMonth]}</span><div class="hmv-cells">${monthCells.join('')}</div></div>`;
+      }
       currentMonth = d.getMonth();
-      const label = document.createElement('span');
-      label.className = 'heatmap-month-label';
-      label.textContent = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][currentMonth];
-      monthLabels.appendChild(label);
+      monthCells = [];
+      horizMonthLabels += `<span class="heatmap-month-label">${MONTHS[currentMonth]}</span>`;
     }
+    monthCells.push(cellHtml);
   });
-  content.innerHTML = '';
-  content.appendChild(monthLabels);
-  content.appendChild(grid);
-  content.innerHTML += `<div class="heatmap-legend">Less <span class="heatmap-legend-swatch l0"></span><span class="heatmap-legend-swatch l1"></span><span class="heatmap-legend-swatch l2"></span><span class="heatmap-legend-swatch l3"></span><span class="heatmap-legend-swatch l4"></span><span class="heatmap-legend-swatch l5"></span> More</div>`;
+  if (currentMonth >= 0) {
+    vertHtml += `<div class="hmv-row"><span class="hmv-month">${MONTHS[currentMonth]}</span><div class="hmv-cells">${monthCells.join('')}</div></div>`;
+  }
+  horizMonthLabels += '</div>';
+  horizGrid += '</div>';
+
+  const legendHtml = `<div class="heatmap-legend">Less <span class="heatmap-legend-swatch l0"></span><span class="heatmap-legend-swatch l1"></span><span class="heatmap-legend-swatch l2"></span><span class="heatmap-legend-swatch l3"></span><span class="heatmap-legend-swatch l4"></span><span class="heatmap-legend-swatch l5"></span> More</div>`;
+
+  content.innerHTML = `<div class="heatmap-horiz">${horizMonthLabels}${horizGrid}</div><div class="heatmap-vert">${vertHtml}</div>${legendHtml}`;
 }
 
 // ═══════════════════════════════════════════════════════════════

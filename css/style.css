@@ -2570,7 +2570,6 @@ select option { background: var(--bg-card); }
 /* ─── RITUAL WIDGET ─────────────────────────────────────────── */
 .ritual-widget-inner {
   display: flex;
-  align-items: center;
   gap: 1rem;
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -2581,14 +2580,15 @@ select option { background: var(--bg-card); }
 .ritual-widget-ring {
   position: relative;
   flex-shrink: 0;
+  align-self: center;
 }
 .ritual-widget-pct {
   position: absolute;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   font-family: var(--font-display);
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1.2rem;
+  font-weight: 650;
   color: var(--text);
 }
 .ritual-widget-info {
@@ -2604,8 +2604,8 @@ select option { background: var(--bg-card); }
   letter-spacing: 0.08em;
 }
 .ritual-widget-stat {
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 1.15rem;
+  font-weight: 550;
   color: var(--text);
   line-height: 1.3;
 }
@@ -2614,22 +2614,20 @@ select option { background: var(--bg-card); }
   color: var(--text-muted);
   font-family: var(--font-mono);
 }
-.ritual-widget-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  margin-top: 0.35rem;
-  padding: 0.35rem 0.85rem;
-  background: #7fb685;
-  color: #fff;
-  border-radius: 999px;
-  font-size: 0.72rem;
+.ritual-widget-footer {
+  margin-top: auto;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+.ritual-widget-cta {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: #7fb685;
   font-weight: 500;
   text-decoration: none;
   transition: opacity .2s;
-  align-self: flex-start;
 }
-.ritual-widget-btn:hover { opacity: 0.85; }
+.ritual-widget-cta:hover { opacity: 0.75; }
 
 /* ════════════════════════════════════════════════════════════
    S — WEEKLY REPORT CARD

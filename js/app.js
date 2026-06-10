@@ -1226,29 +1226,32 @@ function renderRitualWidget() {
     el.innerHTML = `
       <div class="ritual-widget-inner">
         <div class="ritual-widget-ring">
-          <svg width="72" height="72" viewBox="0 0 72 72">
-            <circle cx="36" cy="36" r="30" fill="none" stroke="var(--bg-subtle)" stroke-width="4"/>
+          <svg width="80" height="80" viewBox="0 0 80 80">
+            <circle cx="40" cy="40" r="34" fill="none" stroke="var(--bg-subtle)" stroke-width="4"/>
           </svg>
         </div>
         <div class="ritual-widget-info">
           <span class="ritual-widget-label">Ritual</span>
           <span class="ritual-widget-stat">No habits tracked yet today.</span>
-          <a href="https://appritual.vercel.app" target="_blank" class="ritual-widget-btn">Start your habits →</a>
+          <span class="ritual-widget-streak">Start tracking to see your progress</span>
+          <div class="ritual-widget-footer">
+            <a href="https://appritual.vercel.app" target="_blank" class="ritual-widget-cta">Start your habits →</a>
+          </div>
         </div>
       </div>`;
     return;
   }
-  const r = 30;
+  const r = 34;
   const circ = 2 * Math.PI * r;
   const offset = circ * (1 - snap.pct / 100);
   el.innerHTML = `
     <div class="ritual-widget-inner">
       <div class="ritual-widget-ring">
-        <svg width="72" height="72" viewBox="0 0 72 72">
-          <circle cx="36" cy="36" r="${r}" fill="none" stroke="var(--bg-subtle)" stroke-width="4"/>
-          <circle cx="36" cy="36" r="${r}" fill="none" stroke="#7fb685" stroke-width="4"
+        <svg width="80" height="80" viewBox="0 0 80 80">
+          <circle cx="40" cy="40" r="${r}" fill="none" stroke="var(--bg-subtle)" stroke-width="4"/>
+          <circle cx="40" cy="40" r="${r}" fill="none" stroke="#7fb685" stroke-width="4"
             stroke-dasharray="${circ}" stroke-dashoffset="${offset}"
-            stroke-linecap="round" transform="rotate(-90 36 36)"
+            stroke-linecap="round" transform="rotate(-90 40 40)"
             style="transition:stroke-dashoffset .6s cubic-bezier(.4,0,.2,1)"/>
         </svg>
         <span class="ritual-widget-pct">${Math.round(snap.pct)}%</span>
@@ -1257,7 +1260,9 @@ function renderRitualWidget() {
         <span class="ritual-widget-label">Ritual</span>
         <span class="ritual-widget-stat">${snap.done} of ${snap.total} habits done</span>
         <span class="ritual-widget-streak">🔥 ${snap.streak||0} day streak</span>
-        <a href="https://appritual.vercel.app" target="_blank" class="ritual-widget-btn">Open Ritual →</a>
+        <div class="ritual-widget-footer">
+          <a href="https://appritual.vercel.app" target="_blank" class="ritual-widget-cta">Open Ritual →</a>
+        </div>
       </div>
     </div>`;
 }

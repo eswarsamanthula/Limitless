@@ -170,6 +170,9 @@ async function showApp(user) {
     }
   }
 
+  // Re-write snapshot now that streak is loaded from user_data
+  writeLimitlessSnapshot();
+
   renderView();
   initNotifications();
   if (typeof window.initStreakUI === 'function') window.initStreakUI();
@@ -214,6 +217,7 @@ async function showApp(user) {
               localStorage.setItem('limitless_email_alerts', 'on');
             }
           } catch (_) {}
+          writeLimitlessSnapshot();
           renderView();
         }
       }, 500);

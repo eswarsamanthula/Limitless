@@ -160,6 +160,11 @@ async function showApp(user) {
         localStorage.setItem('limitless_ritual_widget', 'on');
       }
       if (userData.ritual_today_snapshot) state.ritualSnapshot = userData.ritual_today_snapshot;
+      if (userData.limitless_widget_on === false) {
+        localStorage.setItem('limitless_widget_on', 'off');
+      } else if (userData.limitless_widget_on === true) {
+        localStorage.setItem('limitless_widget_on', 'on');
+      }
     } catch (e) {
       console.warn('Could not load user data from server, using defaults');
     }
@@ -197,6 +202,11 @@ async function showApp(user) {
               localStorage.setItem('limitless_ritual_widget', 'off');
             } else if (userData.ritual_widget_on === true) {
               localStorage.setItem('limitless_ritual_widget', 'on');
+            }
+            if (userData.limitless_widget_on === false) {
+              localStorage.setItem('limitless_widget_on', 'off');
+            } else if (userData.limitless_widget_on === true) {
+              localStorage.setItem('limitless_widget_on', 'on');
             }
             if (userData.email_alerts === false) {
               localStorage.setItem('limitless_email_alerts', 'off');
@@ -236,6 +246,22 @@ async function loadAll(opts = {}) {
   } finally {
     state.loading = false;
     renderView();
+  }
+  writeLimitlessSnapshot();
+}
+
+// ─── LIMITLESS SNAPSHOT (for Ritual widget) ─────────────────
+function writeLimitlessSnapshot() {
+  if (!state.accounts || state.accounts.length === 0) return;
+  const total = state.accounts.length;
+  const available = state.accounts.filter(a => !isOnCooldown(a)).length;
+  const healthScore = Math.round((available / total) * 100);
+  const streak = state.streak?.streak || 0;
+  if (typeof setUserData === 'function') {
+    setUserData('limitless_today_snapshot', {
+      healthScore, available, total, streak,
+      updatedAt: new Date().toISOString()
+    }).catch(() => {});
   }
 }
 

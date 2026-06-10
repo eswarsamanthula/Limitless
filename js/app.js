@@ -1212,12 +1212,14 @@ function renderRitualWidget() {
   const el = document.getElementById('ritual-widget');
   const grid = document.getElementById('dash-widgets');
   if (!el || !grid) return;
-  const toggle = localStorage.getItem('limitless_ritual_widget');
+  const toggle = localStorage.getItem('limitless_ritual_widget') ?? 'on';
   if (toggle === 'off') {
     el.innerHTML = '';
+    el.style.display = 'none';
     grid.classList.add('ritual-off');
     return;
   }
+  el.style.display = '';
   grid.classList.remove('ritual-off');
   const snap = state.ritualSnapshot;
   if (!snap || !snap.total || snap.total === 0) {
@@ -3220,7 +3222,7 @@ function renderSettings() {
   // Ritual widget toggle state
   const ritualToggle = $('settings-ritual-toggle');
   if (ritualToggle) {
-    const ritualState = localStorage.getItem('limitless_ritual_widget');
+    const ritualState = localStorage.getItem('limitless_ritual_widget') ?? 'on';
     if (ritualState === 'off') {
       ritualToggle.textContent = 'OFF';
       ritualToggle.className = 'btn-ghost small danger';
@@ -3374,7 +3376,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Ritual widget toggle (synced across devices via user_data)
   $('settings-ritual-toggle')?.addEventListener('click', async () => {
-    const cur = localStorage.getItem('limitless_ritual_widget');
+    const cur = localStorage.getItem('limitless_ritual_widget') ?? 'on';
     const next = cur === 'off' ? 'on' : 'off';
     localStorage.setItem('limitless_ritual_widget', next);
     $('settings-ritual-toggle').textContent = next === 'off' ? 'OFF' : 'ON';

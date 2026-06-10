@@ -2562,6 +2562,7 @@ select option { background: var(--bg-card); }
   transition: grid-template-columns .3s ease;
 }
 .dash-widgets.ritual-off { grid-template-columns: 1fr 1fr 1fr; }
+.dash-widgets.ritual-off #ritual-widget { display: none; }
 @media (max-width: 768px) {
   .dash-widgets { grid-template-columns: 1fr !important; }
 }

@@ -49,58 +49,64 @@ let _showAppGuard = false;
 
 // ─── INIT ────────────────────────────────────────────────────
 async function init() {
-  const hasSupabase = initSupabase();
+  try {
+    const hasSupabase = initSupabase();
 
-  if (!hasSupabase) {
-    // Show not-configured warning on auth screen
-    document.getElementById('auth-not-configured')?.classList.remove('hidden');
-    document.getElementById('google-signin-btn').disabled = true;
-    document.getElementById('email-action-btn').disabled = true;
-    showAuth();
-  } else {
-    onAuthChange(async (session, event) => {
-      try {
-        if (!session) {
-          if (event === 'SIGNED_OUT') {
-            localStorage.removeItem('limitless_logged_in');
-            _showAppGuard = false;
-            state.accounts = [];
-            state.projects = [];
-            showAuth();
+    if (!hasSupabase) {
+      // Show not-configured warning on auth screen
+      document.getElementById('auth-not-configured')?.classList.remove('hidden');
+      document.getElementById('google-signin-btn').disabled = true;
+      document.getElementById('email-action-btn').disabled = true;
+      showAuth();
+    } else {
+      onAuthChange(async (session, event) => {
+        try {
+          if (!session) {
+            if (event === 'SIGNED_OUT') {
+              localStorage.removeItem('limitless_logged_in');
+              _showAppGuard = false;
+              state.accounts = [];
+              state.projects = [];
+              showAuth();
+            }
+            // Silent on other null-session events (token refresh glitch, etc.)
+            return;
           }
-          // Silent on other null-session events (token refresh glitch, etc.)
-          return;
+          localStorage.setItem('limitless_logged_in', '1');
+          hideSessionBanner();
+          if (!_showAppGuard) {
+            await showApp(session.user);
+          }
+        } catch (e) {
+          console.error('Auth change error:', e);
         }
-        localStorage.setItem('limitless_logged_in', '1');
-        hideSessionBanner();
-        if (!_showAppGuard) {
-          await showApp(session.user);
-        }
-      } catch (e) {
-        console.error('Auth change error:', e);
+      });
+
+      // Backup: if we've been logged in before but onAuthChange delivered no session,
+      // try getSession once (covers edge case where Supabase persistence was slow).
+      const hasLoggedInBefore = localStorage.getItem('limitless_logged_in');
+      if (hasLoggedInBefore && !_showAppGuard) {
+        try {
+          const session = await getSession();
+          if (session) {
+            await showApp(session.user);
+          }
+        } catch (_) {}
       }
-    });
-
-    // Backup: if we've been logged in before but onAuthChange delivered no session,
-    // try getSession once (covers edge case where Supabase persistence was slow).
-    const hasLoggedInBefore = localStorage.getItem('limitless_logged_in');
-    if (hasLoggedInBefore && !_showAppGuard) {
-      try {
-        const session = await getSession();
-        if (session) {
-          await showApp(session.user);
-        }
-      } catch (_) {}
     }
-  }
 
-  bindUIEvents();
-  startGlobalCountdownTick();
+    bindUIEvents();
+    startGlobalCountdownTick();
+  } catch (e) {
+    console.error('Init failed:', e);
+    showAuth();
+  }
 }
 
 // ─── AUTH SCREENS ─────────────────────────────────────────────
 function showAuth() {
-  $('loading-screen')?.classList.add('hidden');
+  const loading = document.getElementById('loading-screen');
+  if (loading) loading.classList.add('hidden');
   $('auth-screen').classList.add('active');
   $('app-screen').classList.remove('active');
 }

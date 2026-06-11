@@ -17,7 +17,6 @@ function initSupabase() {
         persistSession: true,
         storage: localStorage,
         autoRefreshToken: true,
-        detectSessionInUrl: true,
       },
     });
     return true;

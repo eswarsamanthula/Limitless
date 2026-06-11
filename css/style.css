@@ -345,7 +345,8 @@ body {
   margin-left: 220px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* ─── TOPBAR ─── */

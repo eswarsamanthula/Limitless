@@ -142,6 +142,9 @@ async function showApp(user) {
 
   await loadAll();
 
+  // Drain any queued writes from offline session
+  if (navigator.onLine) await queueDrain();
+
   // Load cross-device syncable data from Supabase into state cache
   if (typeof loadAllUserData === 'function') {
     try {
@@ -244,11 +247,19 @@ async function loadAll(opts = {}) {
     state.accounts = accounts || [];
     state.projects = projects || [];
     state.loadError = false;
+    // Cache to localStorage for offline use
+    cacheSave('accounts', state.accounts);
+    cacheSave('projects', state.projects);
+    showOfflineBanner(false);
   } catch (e) {
     console.error('Load error:', e);
     state.loadError = true;
     if (!navigator.onLine) {
-      // offline — keep stale data silently, show banner
+      // offline — restore from cache
+      const cachedAccounts = cacheLoad('accounts');
+      const cachedProjects = cacheLoad('projects');
+      if (cachedAccounts) state.accounts = cachedAccounts;
+      if (cachedProjects) state.projects = cachedProjects;
       showOfflineBanner(true);
     } else {
       showError('Failed to load data — tap to retry');
@@ -258,7 +269,7 @@ async function loadAll(opts = {}) {
     state.loading = false;
     renderView();
   }
-  writeLimitlessSnapshot();
+  if (!state.loadError) writeLimitlessSnapshot();
 }
 
 // ─── LIMITLESS SNAPSHOT (for Ritual widget) ─────────────────
@@ -506,8 +517,14 @@ function updateSyncBadge() {
   const text = document.getElementById('sync-text');
   if (!el || !text) return;
   _lastSyncTime = new Date();
-  el.classList.remove('syncing');
-  text.textContent = 'Synced';
+  if (!navigator.onLine || queueSize() > 0) {
+    const q = queueSize();
+    el.classList.remove('syncing');
+    text.textContent = q > 0 ? `${q} pending` : 'Offline';
+  } else {
+    el.classList.remove('syncing');
+    text.textContent = 'Synced';
+  }
 }
 function markSyncing() {
   const el = document.getElementById('sync-badge');
@@ -2198,10 +2215,13 @@ function showOfflineBanner(visible) {
 }
 
 window.addEventListener('offline', () => showOfflineBanner(true));
-window.addEventListener('online',  () => {
+window.addEventListener('online',  async () => {
   showOfflineBanner(false);
-  loadAll({ silent: true });
-  showSuccess('Back online — refreshing…');
+  await queueDrain();
+  await loadAll({ silent: true });
+  renderView();
+  const q = queueSize();
+  showSuccess(q > 0 ? `${q} change${q > 1 ? 's' : ''} pending sync` : 'Back online — refreshed ✓');
 });
 
 // ─── SESSION BANNER ───────────────────────────────────────────

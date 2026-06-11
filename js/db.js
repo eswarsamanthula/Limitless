@@ -1,6 +1,7 @@
 // ============================================================
 //  LIMITLESS — DATABASE LAYER
-//  Supabase backend. Email + Google auth. No localStorage demo.
+//  Supabase backend. Email + Google auth.
+//  Offline: caches reads to localStorage, queues writes.
 // ============================================================
 
 let _sb = null;
@@ -112,29 +113,37 @@ async function getProjects() {
 
 async function saveProject(project) {
   if (!_sb || !currentUser) throw new Error('Not authenticated');
-  if (project.id) {
-    const { error } = await _sb.from('projects')
-      .update({ name: project.name, description: project.description, color: project.color })
-      .eq('id', project.id).eq('user_id', currentUser.id);
-    if (error) throw error;
-  } else {
-    const { error } = await _sb.from('projects')
-      .insert({ ...project, user_id: currentUser.id });
-    if (error) throw error;
+  try {
+    if (project.id) {
+      const { error } = await _sb.from('projects')
+        .update({ name: project.name, description: project.description, color: project.color })
+        .eq('id', project.id).eq('user_id', currentUser.id);
+      if (error) throw error;
+    } else {
+      const { error } = await _sb.from('projects')
+        .insert({ ...project, user_id: currentUser.id });
+      if (error) throw error;
+    }
+  } catch (e) {
+    if (!navigator.onLine) { queueAdd('saveProject', project); return; }
+    throw e;
   }
 }
 
 async function deleteProject(id) {
   if (!_sb || !currentUser) throw new Error('Not authenticated');
-  await _sb.from('projects').delete().eq('id', id).eq('user_id', currentUser.id);
-  // Note: project_ids arrays in accounts will retain the deleted id but it will
-  // simply not resolve to a project anymore — harmless. Or clean up:
-  const { data: accs } = await _sb.from('accounts').select('id, project_ids').eq('user_id', currentUser.id);
-  for (const acc of accs || []) {
-    const ids = (acc.project_ids || []).filter(pid => pid !== id);
-    if (ids.length !== (acc.project_ids || []).length) {
-      await _sb.from('accounts').update({ project_ids: ids }).eq('id', acc.id);
+  try {
+    await _sb.from('projects').delete().eq('id', id).eq('user_id', currentUser.id);
+    const { data: accs } = await _sb.from('accounts').select('id, project_ids').eq('user_id', currentUser.id);
+    for (const acc of accs || []) {
+      const ids = (acc.project_ids || []).filter(pid => pid !== id);
+      if (ids.length !== (acc.project_ids || []).length) {
+        await _sb.from('accounts').update({ project_ids: ids }).eq('id', acc.id);
+      }
     }
+  } catch (e) {
+    if (!navigator.onLine) { queueAdd('deleteProject', id); return; }
+    throw e;
   }
 }
 
@@ -183,46 +192,66 @@ async function getAccounts() {
 
 async function saveAccount(account) {
   if (!_sb || !currentUser) throw new Error('Not authenticated');
-  if (account.id) {
-    const { error } = await _sb.from('accounts')
-      .update({
-        platform: account.platform,
-        email: account.email,
-        account_type: account.account_type,
-        project_ids: account.project_ids || [],
-        group_ids: account.group_ids || [],
-        note: account.note,
-        price: account.price ?? null,
-      })
-      .eq('id', account.id).eq('user_id', currentUser.id);
-    if (error) throw error;
-  } else {
-    const { error } = await _sb.from('accounts')
-      .insert({ ...account, user_id: currentUser.id });
-    if (error) throw error;
+  try {
+    if (account.id) {
+      const { error } = await _sb.from('accounts')
+        .update({
+          platform: account.platform,
+          email: account.email,
+          account_type: account.account_type,
+          project_ids: account.project_ids || [],
+          group_ids: account.group_ids || [],
+          note: account.note,
+          price: account.price ?? null,
+        })
+        .eq('id', account.id).eq('user_id', currentUser.id);
+      if (error) throw error;
+    } else {
+      const { error } = await _sb.from('accounts')
+        .insert({ ...account, user_id: currentUser.id });
+      if (error) throw error;
+    }
+  } catch (e) {
+    if (!navigator.onLine) { queueAdd('saveAccount', account); return; }
+    throw e;
   }
 }
 
 async function deleteAccount(id) {
   if (!_sb || !currentUser) throw new Error('Not authenticated');
-  const { error } = await _sb.from('accounts').delete().eq('id', id).eq('user_id', currentUser.id);
-  if (error) throw error;
+  try {
+    const { error } = await _sb.from('accounts').delete().eq('id', id).eq('user_id', currentUser.id);
+    if (error) throw error;
+  } catch (e) {
+    if (!navigator.onLine) { queueAdd('deleteAccount', id); return; }
+    throw e;
+  }
 }
 
 async function logLimit(accountId, resetAt, note) {
   if (!_sb || !currentUser) throw new Error('Not authenticated');
-  const { error } = await _sb.from('accounts')
-    .update({ limit_hit_at: new Date().toISOString(), reset_at: resetAt, limit_note: note || null })
-    .eq('id', accountId).eq('user_id', currentUser.id);
-  if (error) throw error;
+  try {
+    const { error } = await _sb.from('accounts')
+      .update({ limit_hit_at: new Date().toISOString(), reset_at: resetAt, limit_note: note || null })
+      .eq('id', accountId).eq('user_id', currentUser.id);
+    if (error) throw error;
+  } catch (e) {
+    if (!navigator.onLine) { queueAdd('logLimit', { accountId, resetAt, note }); return; }
+    throw e;
+  }
 }
 
 async function clearLimit(accountId) {
   if (!_sb || !currentUser) throw new Error('Not authenticated');
-  const { error } = await _sb.from('accounts')
-    .update({ limit_hit_at: null, reset_at: null, limit_note: null })
-    .eq('id', accountId).eq('user_id', currentUser.id);
-  if (error) throw error;
+  try {
+    const { error } = await _sb.from('accounts')
+      .update({ limit_hit_at: null, reset_at: null, limit_note: null })
+      .eq('id', accountId).eq('user_id', currentUser.id);
+    if (error) throw error;
+  } catch (e) {
+    if (!navigator.onLine) { queueAdd('clearLimit', accountId); return; }
+    throw e;
+  }
 }
 // ─── PROFILE: UPDATE DISPLAY NAME ───────────────────────────
 async function updateDisplayName(name) {
@@ -276,4 +305,101 @@ function unsubscribeFromRealtime() {
   _channels.forEach(ch => _sb?.removeChannel(ch));
   _channels = [];
   _realtimeCallback = null;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  OFFLINE CACHE + WRITE QUEUE
+// ═══════════════════════════════════════════════════════════════
+
+const _CACHE_PREFIX = 'limit_cache_';
+const _QUEUE_KEY = 'limit_write_queue';
+
+function cacheSave(key, data) {
+  try { localStorage.setItem(_CACHE_PREFIX + key, JSON.stringify(data)); } catch (_) {}
+}
+function cacheLoad(key) {
+  try { const r = localStorage.getItem(_CACHE_PREFIX + key); return r ? JSON.parse(r) : null; } catch (_) { return null; }
+}
+function cacheClear() {
+  Object.keys(localStorage).filter(k => k.startsWith(_CACHE_PREFIX)).forEach(k => localStorage.removeItem(k));
+}
+
+function queueGet() {
+  try { return JSON.parse(localStorage.getItem(_QUEUE_KEY) || '[]'); } catch { return []; }
+}
+function queueSet(q) {
+  localStorage.setItem(_QUEUE_KEY, JSON.stringify(q));
+}
+function queueAdd(action, payload) {
+  const q = queueGet();
+  q.push({ action, payload, ts: Date.now() });
+  queueSet(q);
+}
+function queueSize() { return queueGet().length; }
+
+async function queueDrain() {
+  const q = queueGet();
+  if (!q.length) return;
+  const kept = [];
+  for (const item of q) {
+    try {
+      switch (item.action) {
+        case 'saveAccount':   await _queueSaveAccount(item.payload); break;
+        case 'deleteAccount': await _queueDeleteAccount(item.payload); break;
+        case 'logLimit':      await _queueLogLimit(item.payload.accountId, item.payload.resetAt, item.payload.note); break;
+        case 'clearLimit':    await _queueClearLimit(item.payload); break;
+        case 'saveProject':   await _queueSaveProject(item.payload); break;
+        case 'deleteProject': await _queueDeleteProject(item.payload); break;
+      }
+    } catch (_) { kept.push(item); }
+  }
+  queueSet(kept);
+}
+
+// Internal: direct Supabase writes without queue (used by queueDrain)
+async function _queueSaveAccount(account) { /* same as saveAccount */ 
+  if (!_sb || !currentUser) throw Error('No auth');
+  if (account.id) {
+    const { error } = await _sb.from('accounts').update({ platform: account.platform, email: account.email, account_type: account.account_type, project_ids: account.project_ids || [], group_ids: account.group_ids || [], note: account.note, price: account.price ?? null }).eq('id', account.id).eq('user_id', currentUser.id);
+    if (error) throw error;
+  } else {
+    const { error } = await _sb.from('accounts').insert({ ...account, user_id: currentUser.id });
+    if (error) throw error;
+  }
+}
+async function _queueDeleteAccount(id) {
+  if (!_sb || !currentUser) throw Error('No auth');
+  const { error } = await _sb.from('accounts').delete().eq('id', id).eq('user_id', currentUser.id);
+  if (error) throw error;
+}
+async function _queueLogLimit(accountId, resetAt, note) {
+  if (!_sb || !currentUser) throw Error('No auth');
+  const { error } = await _sb.from('accounts').update({ limit_hit_at: new Date().toISOString(), reset_at: resetAt, limit_note: note || null }).eq('id', accountId).eq('user_id', currentUser.id);
+  if (error) throw error;
+}
+async function _queueClearLimit(accountId) {
+  if (!_sb || !currentUser) throw Error('No auth');
+  const { error } = await _sb.from('accounts').update({ limit_hit_at: null, reset_at: null, limit_note: null }).eq('id', accountId).eq('user_id', currentUser.id);
+  if (error) throw error;
+}
+async function _queueSaveProject(project) {
+  if (!_sb || !currentUser) throw Error('No auth');
+  if (project.id) {
+    const { error } = await _sb.from('projects').update({ name: project.name, description: project.description, color: project.color }).eq('id', project.id).eq('user_id', currentUser.id);
+    if (error) throw error;
+  } else {
+    const { error } = await _sb.from('projects').insert({ ...project, user_id: currentUser.id });
+    if (error) throw error;
+  }
+}
+async function _queueDeleteProject(id) {
+  if (!_sb || !currentUser) throw Error('No auth');
+  await _sb.from('projects').delete().eq('id', id).eq('user_id', currentUser.id);
+  const { data: accs } = await _sb.from('accounts').select('id, project_ids').eq('user_id', currentUser.id);
+  for (const acc of accs || []) {
+    const ids = (acc.project_ids || []).filter(pid => pid !== id);
+    if (ids.length !== (acc.project_ids || []).length) {
+      await _sb.from('accounts').update({ project_ids: ids }).eq('id', acc.id);
+    }
+  }
 }

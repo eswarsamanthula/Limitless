@@ -941,6 +941,11 @@
 <script src="js/db.js"></script>
 <script src="js/notifications.js"></script>
 <script src="js/app.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js');
+}
+</script>
 
 <!-- SAVE CHAT MODAL -->
 <div id="modal-chat" class="modal-backdrop">

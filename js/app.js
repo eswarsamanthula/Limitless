@@ -197,50 +197,56 @@ async function showApp(user) {
   // Live cross-device sync — re-fetch data when another device makes changes
   if (typeof subscribeToRealtime === 'function') {
     let _rtTimer;
+    let _rtBusy = false;
     subscribeToRealtime((table) => {
+      if (_rtBusy) return;
       clearTimeout(_rtTimer);
       _rtTimer = setTimeout(async () => {
-        showSuccess('Live sync update received');
-        if (table === 'accounts' || table === 'projects') {
-          await loadAll();
-          renderView();
-        } else if (table === 'user_data') {
-          try {
-            const userData = await loadAllUserData();
-            if (userData.prompts) state.prompts = userData.prompts;
-            if (userData.accountTags) state.accountTags = userData.accountTags;
-            if (userData.costPrices) state.costPrices = userData.costPrices;
-            if (userData.groups) state.groups = userData.groups;
-            if (userData.chats) state.chats = userData.chats;
-            if (userData.notifHistory) state.notifHistory = userData.notifHistory;
-            if (userData.streak) state.streak = userData.streak;
-            if (userData.messages) { state.messages = userData.messages; saveMessages(userData.messages); }
-            if (userData.limitHitTimeline) state.limitHitTimeline = userData.limitHitTimeline;
-            if (userData.ritual_today_snapshot) state.ritualSnapshot = userData.ritual_today_snapshot;
-            if (userData.ritual_widget_on === false) {
-              localStorage.setItem('limitless_ritual_widget', 'off');
-            } else if (userData.ritual_widget_on === true) {
-              localStorage.setItem('limitless_ritual_widget', 'on');
-            } else {
-              localStorage.setItem('limitless_ritual_widget', 'off');
-            }
-            if (userData.limitless_widget_on === false) {
-              localStorage.setItem('limitless_widget_on', 'off');
-            } else if (userData.limitless_widget_on === true) {
-              localStorage.setItem('limitless_widget_on', 'on');
-            } else {
-              localStorage.setItem('limitless_widget_on', 'off');
-            }
-            if (userData.email_alerts === false) {
-              localStorage.setItem('limitless_email_alerts', 'off');
-            } else if (userData.email_alerts === true) {
-              localStorage.setItem('limitless_email_alerts', 'on');
-            } else {
-              localStorage.setItem('limitless_email_alerts', 'off');
-            }
-          } catch (_) {}
-          writeLimitlessSnapshot();
-          renderView();
+        if (_rtBusy) return;
+        _rtBusy = true;
+        try {
+          if (table === 'accounts' || table === 'projects') {
+            await loadAll();
+            renderView();
+          } else if (table === 'user_data') {
+            try {
+              const userData = await loadAllUserData();
+              if (userData.prompts) state.prompts = userData.prompts;
+              if (userData.accountTags) state.accountTags = userData.accountTags;
+              if (userData.costPrices) state.costPrices = userData.costPrices;
+              if (userData.groups) state.groups = userData.groups;
+              if (userData.chats) state.chats = userData.chats;
+              if (userData.notifHistory) state.notifHistory = userData.notifHistory;
+              if (userData.streak) state.streak = userData.streak;
+              if (userData.messages) { state.messages = userData.messages; saveMessages(userData.messages); }
+              if (userData.limitHitTimeline) state.limitHitTimeline = userData.limitHitTimeline;
+              if (userData.ritual_today_snapshot) state.ritualSnapshot = userData.ritual_today_snapshot;
+              if (userData.ritual_widget_on === false) {
+                localStorage.setItem('limitless_ritual_widget', 'off');
+              } else if (userData.ritual_widget_on === true) {
+                localStorage.setItem('limitless_ritual_widget', 'on');
+              } else {
+                localStorage.setItem('limitless_ritual_widget', 'off');
+              }
+              if (userData.limitless_widget_on === false) {
+                localStorage.setItem('limitless_widget_on', 'off');
+              } else if (userData.limitless_widget_on === true) {
+                localStorage.setItem('limitless_widget_on', 'on');
+              } else {
+                localStorage.setItem('limitless_widget_on', 'off');
+              }
+              if (userData.email_alerts === false) {
+                localStorage.setItem('limitless_email_alerts', 'off');
+              } else if (userData.email_alerts === true) {
+                localStorage.setItem('limitless_email_alerts', 'on');
+              } else {
+                localStorage.setItem('limitless_email_alerts', 'off');
+              }
+            } catch (_) {}
+            renderView();
+          }
+        } finally {
+          _rtBusy = false;
         }
       }, 500);
     });

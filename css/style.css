@@ -290,6 +290,7 @@ body {
   text-align: left;
   transition: var(--transition);
   width: 100%;
+  justify-content: flex-start;
 }
 .nav-item:hover { background: var(--bg-subtle); color: var(--text); }
 .nav-item.active { background: var(--accent); color: var(--accent-fg); }

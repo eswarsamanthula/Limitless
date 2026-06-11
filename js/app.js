@@ -163,11 +163,15 @@ async function showApp(user) {
         localStorage.setItem('limitless_email_alerts', 'off');
       } else if (userData.email_alerts === true) {
         localStorage.setItem('limitless_email_alerts', 'on');
+      } else {
+        localStorage.setItem('limitless_email_alerts', 'off');
       }
       if (userData.ritual_widget_on === false) {
         localStorage.setItem('limitless_ritual_widget', 'off');
       } else if (userData.ritual_widget_on === true) {
         localStorage.setItem('limitless_ritual_widget', 'on');
+      } else {
+        localStorage.setItem('limitless_ritual_widget', 'off');
       }
       if (userData.ritual_today_snapshot) state.ritualSnapshot = userData.ritual_today_snapshot;
       if (userData.limitless_widget_on === false) {
@@ -215,16 +219,22 @@ async function showApp(user) {
               localStorage.setItem('limitless_ritual_widget', 'off');
             } else if (userData.ritual_widget_on === true) {
               localStorage.setItem('limitless_ritual_widget', 'on');
+            } else {
+              localStorage.setItem('limitless_ritual_widget', 'off');
             }
             if (userData.limitless_widget_on === false) {
               localStorage.setItem('limitless_widget_on', 'off');
             } else if (userData.limitless_widget_on === true) {
               localStorage.setItem('limitless_widget_on', 'on');
+            } else {
+              localStorage.setItem('limitless_widget_on', 'off');
             }
             if (userData.email_alerts === false) {
               localStorage.setItem('limitless_email_alerts', 'off');
             } else if (userData.email_alerts === true) {
               localStorage.setItem('limitless_email_alerts', 'on');
+            } else {
+              localStorage.setItem('limitless_email_alerts', 'off');
             }
           } catch (_) {}
           writeLimitlessSnapshot();
@@ -1278,7 +1288,7 @@ function renderRitualWidget() {
   const el = document.getElementById('ritual-widget');
   const grid = document.getElementById('dash-widgets');
   if (!el || !grid) return;
-  const toggle = localStorage.getItem('limitless_ritual_widget') ?? 'on';
+  const toggle = localStorage.getItem('limitless_ritual_widget') ?? 'off';
   if (toggle === 'off') {
     el.innerHTML = '';
     el.style.display = 'none';
@@ -3283,7 +3293,7 @@ function renderSettings() {
   // Email alerts toggle state
   const emailToggle = $('settings-email-toggle');
   if (emailToggle) {
-    const emailState = localStorage.getItem('limitless_email_alerts');
+    const emailState = localStorage.getItem('limitless_email_alerts') ?? 'off';
     if (emailState === 'off') {
       emailToggle.textContent = 'OFF';
       emailToggle.className = 'btn-ghost small danger';
@@ -3296,7 +3306,7 @@ function renderSettings() {
   // Ritual widget toggle state
   const ritualToggle = $('settings-ritual-toggle');
   if (ritualToggle) {
-    const ritualState = localStorage.getItem('limitless_ritual_widget') ?? 'on';
+    const ritualState = localStorage.getItem('limitless_ritual_widget') ?? 'off';
     if (ritualState === 'off') {
       ritualToggle.textContent = 'OFF';
       ritualToggle.className = 'btn-ghost small danger';
@@ -3450,7 +3460,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Ritual widget toggle (synced across devices via user_data)
   $('settings-ritual-toggle')?.addEventListener('click', async () => {
-    const cur = localStorage.getItem('limitless_ritual_widget') ?? 'on';
+    const cur = localStorage.getItem('limitless_ritual_widget') ?? 'off';
     const next = cur === 'off' ? 'on' : 'off';
     localStorage.setItem('limitless_ritual_widget', next);
     $('settings-ritual-toggle').textContent = next === 'off' ? 'OFF' : 'ON';

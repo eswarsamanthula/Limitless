@@ -43,6 +43,7 @@ function typeTag(type) {
 // ─── DOM REFS ────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 const $$ = sel => document.querySelectorAll(sel);
+const haptic = (ms = 10) => { try { navigator.vibrate(ms); } catch (_) {} };
 
 // ─── GUARD: prevent showApp double-call from onAuthChange + getSession race ──
 let _showAppGuard = false;
@@ -1684,6 +1685,14 @@ async function handleDeleteAccount(id) {
   try {
     await deleteAccount(id);
     await loadAll();
+    // If no accounts remain, reset streak
+    if (state.accounts.length === 0 && state.streak?.streak > 0) {
+      state.streak = { streak: 0, lastLog: '', history: [] };
+      localStorage.setItem('limitless_streak', '0');
+      localStorage.setItem('limitless_streak_last_log', '');
+      localStorage.setItem('limitless_streak_history', '[]');
+      if (typeof setUserData === 'function') setUserData('streak', state.streak).catch(() => {});
+    }
     renderView();
     showSuccess('Account deleted');
   } catch (e) {
@@ -1718,6 +1727,7 @@ function openLimitModal(accountId) {
 }
 
 async function handleSaveLimit() {
+  haptic();
   const accountId = $('limit-account-id').value;
   const resetVal = $('reset-datetime').value;
   const selectedChip = document.querySelector('#modal-limit .reason-chip.selected');

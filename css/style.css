@@ -1284,12 +1284,15 @@ select option { background: var(--bg-card); }
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);
+    padding: 1.25rem 1rem 1.25rem 1.25rem;
   }
   .sidebar.open {
     transform: translateX(0);
   }
   .sidebar-close { display: block; }
   .sidebar-overlay.open { display: block; }
+  .sidebar-nav { padding: 0; }
+  .nav-item { padding: 0.5rem 0; }
   .main-content { margin-left: 0; }
   .hamburger { display: flex; }
   .stats-row { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }

@@ -10,6 +10,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Limitless" />
+  <link rel="icon" href="icons/icon-192.png" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <title>Limitless — AI Limit Tracker</title>
@@ -59,7 +60,7 @@
     <div class="auth-divider"><span>or</span></div>
 
     <!-- EMAIL FORM -->
-    <div class="auth-email-form" id="auth-email-form">
+    <form class="auth-email-form" id="auth-email-form" novalidate onsubmit="event.preventDefault(); document.getElementById('email-action-btn').click();">
       <div class="field-group">
         <input type="email" id="auth-email-input" placeholder="your@email.com" autocomplete="email" />
       </div>
@@ -85,7 +86,7 @@
       </div>
 
       <button class="btn-link small" id="forgot-pw-btn">Forgot password?</button>
-    </div>
+    </form>
 
     <p class="auth-note">Your data syncs across all your devices.<br/>Free. No ads. Ever.</p>
 

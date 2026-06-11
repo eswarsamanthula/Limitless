@@ -62,14 +62,13 @@ async function init() {
       onAuthChange(async (session, event) => {
         try {
           if (!session) {
+            showAuth();
             if (event === 'SIGNED_OUT') {
               localStorage.removeItem('limitless_logged_in');
               _showAppGuard = false;
               state.accounts = [];
               state.projects = [];
-              showAuth();
             }
-            // Silent on other null-session events (token refresh glitch, etc.)
             return;
           }
           localStorage.setItem('limitless_logged_in', '1');

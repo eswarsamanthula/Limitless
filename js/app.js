@@ -162,6 +162,11 @@ async function showApp(user) {
         localStorage.setItem('limitless_streak', String(userData.streak.streak || 0));
         localStorage.setItem('limitless_streak_last_log', userData.streak.lastLog || '');
         localStorage.setItem('limitless_streak_history', JSON.stringify(userData.streak.history || []));
+      } else {
+        state.streak = { streak: 0, lastLog: '', history: [] };
+        localStorage.removeItem('limitless_streak');
+        localStorage.removeItem('limitless_streak_last_log');
+        localStorage.removeItem('limitless_streak_history');
       }
       if (userData.messages) { state.messages = userData.messages; saveMessages(userData.messages); }
       if (userData.limitHitTimeline) { state.limitHitTimeline = userData.limitHitTimeline; localStorage.setItem('limitless_limitHitTimeline', JSON.stringify(userData.limitHitTimeline)); }
@@ -1320,6 +1325,7 @@ function renderRitualWidget() {
   el.style.display = '';
   grid.classList.remove('ritual-off');
   const snap = state.ritualSnapshot;
+  const ls = state.streak?.streak || 0;
   if (!snap || !snap.total || snap.total === 0) {
     el.innerHTML = `
       <div class="ritual-widget-inner">
@@ -1331,7 +1337,7 @@ function renderRitualWidget() {
         <div class="ritual-widget-info">
           <span class="ritual-widget-label">◎ Ritual</span>
           <span class="ritual-widget-stat">No habits tracked yet today.</span>
-          <span class="ritual-widget-streak">Start tracking to see your progress</span>
+          <span class="ritual-widget-streak">${ls > 0 ? `🔥 ${ls} day streak` : 'Start tracking to see your progress'}</span>
           <div class="ritual-widget-footer">
             <a href="https://appritual.vercel.app" target="_blank" class="ritual-widget-cta">Start your habits →</a>
           </div>

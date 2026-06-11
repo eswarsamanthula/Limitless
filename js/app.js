@@ -1822,20 +1822,33 @@ async function handleDeleteProject(id) {
 }
 
 // ─── MODAL HELPERS ────────────────────────────────────────────
+let _modalOpenCount = 0;
 function openModal(id) {
+  $$('.modal-backdrop.open').forEach(m => {
+    if (m.id !== id) m.classList.remove('open');
+  });
   $(id).classList.add('open');
-  document.body.style.overflow = 'hidden';
+  _modalOpenCount = $$('.modal-backdrop.open').length;
+  document.body.style.overflow = _modalOpenCount > 0 ? 'hidden' : '';
 }
 
 function closeModal(id) {
   $(id).classList.remove('open');
-  document.body.style.overflow = '';
+  _modalOpenCount = $$('.modal-backdrop.open').length;
+  document.body.style.overflow = _modalOpenCount > 0 ? 'hidden' : '';
   // Reset custom platform input when chat modal closes
   if (id === 'modal-chat') {
     const ci = document.getElementById('chat-custom-platform');
     if (ci) { ci.style.display = 'none'; ci.value = ''; }
   }
 }
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const openModals = $$('.modal-backdrop.open');
+    if (openModals.length) closeModal(openModals[openModals.length - 1].id);
+  }
+});
 
 // ─── SIDEBAR ─────────────────────────────────────────────────
 function openSidebar() {

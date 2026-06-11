@@ -938,7 +938,8 @@ select option { background: var(--bg-card); }
   max-width: 90vw;
   animation: fadeUp 0.3s ease;
 }
-.notif-banner.hidden { display: none; }
+.notif-banner.hidden { opacity: 0; transform: translateX(-50%) translateY(-10px); pointer-events: none; transition: opacity .3s ease, transform .3s ease; display: flex; }
+.notif-banner:not(.hidden) { transition: opacity .3s ease, transform .3s ease; }
 #enable-notif-btn {
   padding: 0.3rem 0.75rem;
   background: var(--amber);
@@ -2282,6 +2283,7 @@ select option { background: var(--bg-card); }
 /* On mobile, lift FAB above bottom safe area */
 @media (max-width: 768px) {
   .qs-fab-wrap { bottom: 4.5rem; right: 1rem; }
+  .main-content { padding-bottom: 5rem; }
 }
 /* ═══════════════════════════════════════════════
    CRITICAL MISSING — OFFLINE / SKELETON / TOAST TYPES / SESSION
@@ -3499,3 +3501,12 @@ select option { background: var(--bg-card); }
 }
 .loading-text { font-size: 0.85rem; color: var(--text-muted); font-family: var(--font-mono); }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Touch targets for touch devices */
+@media (pointer: coarse) {
+  .nav-item, .btn-primary, .btn-ghost, .btn-icon-sm, .modal-close, .toggle-pw,
+  .card-btn, .filter-btn, .sort-btn, .platform-btn, .type-btn {
+    min-height: 44px; min-width: 44px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+}

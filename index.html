@@ -742,11 +742,11 @@
 <!-- ============ MODALS ============ -->
 
 <!-- ADD/EDIT ACCOUNT MODAL -->
-<div id="modal-account" class="modal-backdrop">
+<div id="modal-account" class="modal-backdrop" role="dialog" aria-modal="true" aria-label="Account editor">
   <div class="modal">
     <div class="modal-header">
       <h3 id="modal-account-title">Add Account</h3>
-      <button class="modal-close" data-modal="modal-account">✕</button>
+      <button class="modal-close" aria-label="Close" data-modal="modal-account">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="account-id" />
@@ -808,11 +808,11 @@
 </div>
 
 <!-- LOG LIMIT MODAL -->
-<div id="modal-limit" class="modal-backdrop">
+<div id="modal-limit" class="modal-backdrop" role="dialog" aria-modal="true" aria-label="Log limit">
   <div class="modal">
     <div class="modal-header">
       <h3>Log Limit Hit</h3>
-      <button class="modal-close" data-modal="modal-limit">✕</button>
+      <button class="modal-close" aria-label="Close" data-modal="modal-limit">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="limit-account-id" />
@@ -851,11 +851,11 @@
 </div>
 
 <!-- ADD PROJECT MODAL -->
-<div id="modal-project" class="modal-backdrop">
+<div id="modal-project" class="modal-backdrop" role="dialog" aria-modal="true" aria-label="Project editor">
   <div class="modal">
     <div class="modal-header">
       <h3 id="modal-project-title">Add Project</h3>
-      <button class="modal-close" data-modal="modal-project">✕</button>
+      <button class="modal-close" aria-label="Close" data-modal="modal-project">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="project-id" />
@@ -948,11 +948,11 @@ if ('serviceWorker' in navigator) {
 </script>
 
 <!-- SAVE CHAT MODAL -->
-<div id="modal-chat" class="modal-backdrop">
+<div id="modal-chat" class="modal-backdrop" role="dialog" aria-modal="true" aria-label="Save chat">
   <div class="modal">
     <div class="modal-header">
       <h3 id="modal-chat-title">Save Chat</h3>
-      <button class="modal-close" data-modal="modal-chat">✕</button>
+      <button class="modal-close" aria-label="Close" data-modal="modal-chat">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="chat-id" />
@@ -991,11 +991,11 @@ if ('serviceWorker' in navigator) {
 
 <!-- M — SAVE PROMPT MODAL -->
 <!-- MESSAGES MODAL -->
-<div id="modal-message" class="modal-backdrop">
+<div id="modal-message" class="modal-backdrop" role="dialog" aria-modal="true" aria-label="Save message">
   <div class="modal">
     <div class="modal-header">
       <h3 id="modal-message-title">Save Message</h3>
-      <button class="modal-close" data-modal="modal-message">✕</button>
+      <button class="modal-close" aria-label="Close" data-modal="modal-message">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="message-id" />
@@ -1035,11 +1035,11 @@ if ('serviceWorker' in navigator) {
   </div>
 </div>
 
-<div id="modal-message-view" class="modal-backdrop">
+<div id="modal-message-view" class="modal-backdrop" role="dialog" aria-modal="true" aria-label="View message">
   <div class="modal modal-wide">
     <div class="modal-header">
       <h3 id="msg-view-title">Message</h3>
-      <button class="modal-close" data-modal="modal-message-view">✕</button>
+      <button class="modal-close" aria-label="Close" data-modal="modal-message-view">✕</button>
     </div>
     <div class="modal-body">
       <div class="msg-view-platform" id="msg-view-platform"></div>
@@ -1062,11 +1062,11 @@ if ('serviceWorker' in navigator) {
   </div>
 </div>
 
-<div id="modal-prompt" class="modal-backdrop">
+<div id="modal-prompt" class="modal-backdrop" role="dialog" aria-modal="true" aria-label="Save prompt">
   <div class="modal">
     <div class="modal-header">
       <h3 id="modal-prompt-title">Save Prompt</h3>
-      <button class="modal-close" data-modal="modal-prompt">✕</button>
+      <button class="modal-close" aria-label="Close" data-modal="modal-prompt">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="prompt-id" />
@@ -1101,11 +1101,11 @@ if ('serviceWorker' in navigator) {
 </div>
 
 <!-- B — BULK IMPORT MODAL -->
-<div id="modal-bulk" class="modal-backdrop">
+<div id="modal-bulk" class="modal-backdrop" role="dialog" aria-modal="true" aria-label="Bulk import">
   <div class="modal">
     <div class="modal-header">
       <h3>Bulk Import Accounts</h3>
-      <button class="modal-close" data-modal="modal-bulk">✕</button>
+      <button class="modal-close" aria-label="Close" data-modal="modal-bulk">✕</button>
     </div>
     <div class="modal-body">
       <p class="bulk-hint">Paste one account per line:<br/><code>Platform, email/label, type</code></p>
@@ -1120,11 +1120,11 @@ if ('serviceWorker' in navigator) {
 </div>
 
 <!-- C — ACCOUNT GROUP MODAL -->
-<div id="modal-group" class="modal-backdrop">
+<div id="modal-group" class="modal-backdrop" role="dialog" aria-modal="true" aria-label="Group editor">
   <div class="modal">
     <div class="modal-header">
       <h3 id="modal-group-title">Account Group</h3>
-      <button class="modal-close" data-modal="modal-group">✕</button>
+      <button class="modal-close" aria-label="Close" data-modal="modal-group">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="group-id" />
@@ -1152,11 +1152,11 @@ if ('serviceWorker' in navigator) {
 </div>
 
 <!-- W — TAGS MODAL (on account card) -->
-<div id="modal-tags" class="modal-backdrop">
+<div id="modal-tags" class="modal-backdrop" role="dialog" aria-modal="true" aria-label="Edit tags">
   <div class="modal">
     <div class="modal-header">
       <h3>Edit Tags</h3>
-      <button class="modal-close" data-modal="modal-tags">✕</button>
+      <button class="modal-close" aria-label="Close" data-modal="modal-tags">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="tags-account-id" />

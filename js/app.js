@@ -306,7 +306,7 @@ function switchView(view) {
   $$('.view').forEach(v => v.classList.remove('active'));
   $$('.nav-item').forEach(n => n.classList.remove('active'));
 
-  $(`view-${view}`).classList.add('active');
+  $(`view-${view}`)?.classList.add('active');
   document.querySelector(`[data-view="${view}"]`)?.classList.add('active');
 
   const titles = { dashboard: 'Dashboard', accounts: 'Accounts', projects: 'Projects', timeline: 'Timeline', chats: 'Saved Chats', compare: 'Compare Models', report: 'Weekly Report', prompts: 'Prompt Library', cost: 'Cost Tracker', heatmap: 'Limit Heatmap', rotation: 'Rotation Planner', groups: 'Account Groups', settings: 'Profile & Settings' };
@@ -1672,7 +1672,6 @@ async function handleSaveAccount() {
   try {
     await saveAccount(account);
     await loadAll();
-    renderView();
     closeModal('modal-account');
     showSuccess(state.editingAccountId ? 'Account updated' : 'Account added ✓');
   } catch (e) {
@@ -1686,7 +1685,6 @@ async function handleDeleteAccount(id) {
   try {
     await deleteAccount(id);
     await loadAll();
-    // If no accounts remain, reset streak
     if (state.accounts.length === 0 && state.streak?.streak > 0) {
       state.streak = { streak: 0, lastLog: '', history: [] };
       localStorage.setItem('limitless_streak', '0');
@@ -1993,6 +1991,7 @@ function bindUIEvents() {
   $('sidebar-close').addEventListener('click', closeSidebar);
   $('sidebar-overlay').addEventListener('click', closeSidebar);
   $('sidebar-logo').addEventListener('click', () => { closeSidebar(); switchView('dashboard'); });
+  $('sidebar-logo').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); closeSidebar(); switchView('dashboard'); } });
 
   // Nav
   $$('.nav-item').forEach(btn => {
@@ -3336,13 +3335,13 @@ function renderCompare() {
 
   // ── Helpers ─────────────────────────────────────────────
   function todayStr() {
-    return new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
+    return new Date().toLocaleDateString('sv-SE'); // 'YYYY-MM-DD' in local tz
   }
 
   function yesterdayStr() {
     const d = new Date();
     d.setDate(d.getDate() - 1);
-    return d.toISOString().slice(0, 10);
+    return d.toLocaleDateString('sv-SE');
   }
 
   function getStreakData() {

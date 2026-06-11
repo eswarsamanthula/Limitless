@@ -22,7 +22,7 @@
 <body>
 
 <!-- LOADING SCREEN -->
-<div id="loading-screen" class="loading-screen">
+<div id="loading-screen" class="loading-screen" role="status" aria-live="polite">
   <div class="loading-spinner"></div>
   <span class="loading-text">Loading...</span>
 </div>
@@ -113,7 +113,7 @@
 
   <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
-    <div class="sidebar-header" id="sidebar-logo" style="cursor:pointer">
+    <div class="sidebar-header" id="sidebar-logo" style="cursor:pointer" role="button" tabindex="0" aria-label="Go to Dashboard">
       <span class="logo-mark small">◎</span>
       <span class="logo-text small">Limitless</span>
       <button class="sidebar-close" id="sidebar-close">✕</button>
@@ -907,7 +907,7 @@
 </div>
 
 <!-- TOAST -->
-<div id="toast" class="toast"></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <!-- OFFLINE BANNER -->
 <div id="offline-banner" class="offline-banner hidden" role="alert">

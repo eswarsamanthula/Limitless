@@ -1,4 +1,4 @@
-const CACHE = 'limitless-v1';
+const CACHE = 'limitless-v2';
 const ASSETS = [
   '/', '/index.html',
   '/js/app.js', '/js/db.js', '/js/config.js', '/js/notifications.js',
@@ -11,6 +11,7 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', e => {
+  self.skipWaiting();
   e.waitUntil(
     caches.open(CACHE).then(c => {
       return Promise.allSettled(ASSETS.map(url =>
@@ -24,7 +25,7 @@ self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
+    ).then(() => clients.claim())
   );
 });
 

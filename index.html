@@ -708,6 +708,38 @@
           </div>
         </section>
 
+        <!-- ── IMPORT / EXPORT ── -->
+        <section class="settings-section">
+          <div class="settings-section-header">
+            <span class="settings-section-icon">◧</span>
+            <span>Import / Export</span>
+          </div>
+          <div class="settings-card">
+            <div class="settings-card-row row-action">
+              <div class="settings-row-text">
+                <div class="settings-row-label">Export as CSV</div>
+                <div class="settings-row-sub">Download accounts &amp; projects as .csv files.</div>
+              </div>
+              <button class="btn-ghost small" id="limitless-export-csv">Download CSV</button>
+            </div>
+            <div class="settings-card-row row-action">
+              <div class="settings-row-text">
+                <div class="settings-row-label">Export as Excel</div>
+                <div class="settings-row-sub">Download accounts &amp; projects as .xlsx (multiple sheets).</div>
+              </div>
+              <button class="btn-ghost small" id="limitless-export-xlsx">Download XLSX</button>
+            </div>
+            <div class="settings-card-row row-action">
+              <div class="settings-row-text">
+                <div class="settings-row-label">Import Data</div>
+                <div class="settings-row-sub">Restore accounts &amp; projects from .csv or .xlsx file.</div>
+              </div>
+              <input type="file" id="limitless-import-input" accept=".csv,.xlsx" style="display:none" />
+              <button class="btn-ghost small" id="limitless-import-btn">Choose File</button>
+            </div>
+          </div>
+        </section>
+
         <!-- ── DANGER ZONE ── -->
         <section class="settings-section">
           <div class="settings-section-header danger-header">
@@ -1240,10 +1272,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="js/config.js?v=3"></script>
 <script src="js/db.js?v=3"></script>
 <script src="js/notifications.js?v=3"></script>
-<script src="js/app.js?v=3"></script>
+<script src="js/app.js?v=4"></script>
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js?v=3');

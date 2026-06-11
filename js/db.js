@@ -20,13 +20,13 @@ function initSupabase() {
         autoRefreshToken: true,
       },
     });
+    window.__sb = _sb;
     return true;
   } catch (e) {
     console.warn('Supabase init failed:', e);
     return false;
   }
 }
-
 // ─── AUTH — GOOGLE ───────────────────────────────────────────
 async function signInWithGoogle() {
   if (!_sb) throw new Error('Supabase not configured');
@@ -140,6 +140,17 @@ async function deleteProject(id) {
     if (!navigator.onLine) { queueAdd('deleteProject', id); return; }
     throw e;
   }
+}
+
+// ─── LOCAL STORAGE HELPERS (for local-only user data) ──────
+function lsGet(key, def) {
+  try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : def; } catch { return def; }
+}
+function lsSet(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+}
+function lsRemove(key) {
+  try { localStorage.removeItem(key); } catch {}
 }
 
 // ─── USER DATA (jsonb key-value store for cross-device sync) ──

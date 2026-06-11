@@ -151,15 +151,20 @@ async function showApp(user) {
   if (typeof loadAllUserData === 'function') {
     try {
       const userData = await loadAllUserData();
-      if (userData.prompts) state.prompts = userData.prompts;
-      if (userData.accountTags) state.accountTags = userData.accountTags;
-      if (userData.costPrices) state.costPrices = userData.costPrices;
-      if (userData.groups) state.groups = userData.groups;
-      if (userData.chats) state.chats = userData.chats;
-      if (userData.notifHistory) state.notifHistory = userData.notifHistory;
-      if (userData.streak) state.streak = userData.streak;
+      if (userData.prompts) { state.prompts = userData.prompts; localStorage.setItem('limitless_prompts', JSON.stringify(userData.prompts)); }
+      if (userData.accountTags) { state.accountTags = userData.accountTags; localStorage.setItem('limitless_account_tags', JSON.stringify(userData.accountTags)); }
+      if (userData.costPrices) { state.costPrices = userData.costPrices; }
+      if (userData.groups) { state.groups = userData.groups; localStorage.setItem('limitless_groups', JSON.stringify(userData.groups)); }
+      if (userData.chats) { state.chats = userData.chats; localStorage.setItem('limitless_chats', JSON.stringify(userData.chats)); }
+      if (userData.notifHistory) { state.notifHistory = userData.notifHistory; localStorage.setItem('limitless_notif_history', JSON.stringify(userData.notifHistory)); }
+      if (userData.streak) {
+        state.streak = userData.streak;
+        localStorage.setItem('limitless_streak', String(userData.streak.streak || 0));
+        localStorage.setItem('limitless_streak_last_log', userData.streak.lastLog || '');
+        localStorage.setItem('limitless_streak_history', JSON.stringify(userData.streak.history || []));
+      }
       if (userData.messages) { state.messages = userData.messages; saveMessages(userData.messages); }
-      if (userData.limitHitTimeline) state.limitHitTimeline = userData.limitHitTimeline;
+      if (userData.limitHitTimeline) { state.limitHitTimeline = userData.limitHitTimeline; localStorage.setItem('limitless_limitHitTimeline', JSON.stringify(userData.limitHitTimeline)); }
       // Sync email alerts preference from Supabase → localStorage (so edge function + client agree)
       if (userData.email_alerts === false) {
         localStorage.setItem('limitless_email_alerts', 'off');
@@ -183,6 +188,10 @@ async function showApp(user) {
       }
     } catch (e) {
       console.warn('Could not load user data from server, using defaults');
+    }
+    // Fallback: load migrated local-only keys from localStorage when Supabase has none
+    if (!state.limitHitTimeline.length) {
+      try { const c = localStorage.getItem('limitless_limitHitTimeline'); if (c) state.limitHitTimeline = JSON.parse(c); } catch {}
     }
   }
 
@@ -1752,6 +1761,7 @@ async function handleSaveLimit() {
     if (acct) {
       const entry = { accountId, platform: acct.platform, email: acct.email, date: new Date().toISOString(), note };
       state.limitHitTimeline = [...(state.limitHitTimeline || []), entry];
+      localStorage.setItem('limitless_limitHitTimeline', JSON.stringify(state.limitHitTimeline));
       if (typeof setUserData === 'function') {
         setUserData('limitHitTimeline', state.limitHitTimeline).catch(() => {});
       }
@@ -3776,6 +3786,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // ══ IMPORT / EXPORT ═════════════════════════════════════════
+  $('limitless-export-csv')?.addEventListener('click', exportLimitlessCSV);
+  $('limitless-export-xlsx')?.addEventListener('click', exportLimitlessXLSX);
+  $('limitless-import-btn')?.addEventListener('click', () => $('limitless-import-input')?.click());
+  $('limitless-import-input')?.addEventListener('change', handleLimitlessImport);
+
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -4080,3 +4096,139 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('message-prompt')?.addEventListener('input', () => updateCharCount('message-prompt', 'prompt-char-count'));
   document.getElementById('message-reply')?.addEventListener('input',  () => updateCharCount('message-reply',  'reply-char-count'));
 });
+
+// ═══════════════════════════════════════════════════════════════
+//  IMPORT / EXPORT
+// ═══════════════════════════════════════════════════════════════
+
+const LIMITLESS_ACCT_COLS = ['id','user_id','platform','email','account_type','project_ids','group_ids','note','price','limit_hit_at','reset_at','limit_note','created_at'];
+const LIMITLESS_PROJ_COLS = ['id','user_id','name','description','color','created_at'];
+const LIMITLESS_SIG = ['platform','email','account_type','price'];
+
+function _dl(text, name, mime) {
+  const blob = new Blob([text], { type: mime });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+async function exportLimitlessCSV() {
+  try {
+    const accounts = await _fetchAll('accounts');
+    const projects = await _fetchAll('projects');
+    _dl(_csv(accounts, LIMITLESS_ACCT_COLS), 'limitless_accounts.csv', 'text/csv');
+    _dl(_csv(projects, LIMITLESS_PROJ_COLS), 'limitless_projects.csv', 'text/csv');
+    showToast('Downloaded: limitless_accounts.csv + limitless_projects.csv');
+  } catch(e) { showToast('Export failed: ' + e.message); }
+}
+
+async function exportLimitlessXLSX() {
+  try {
+    if (typeof XLSX === 'undefined') { showToast('Loading SheetJS…'); return; }
+    const accounts = await _fetchAll('accounts');
+    const projects = await _fetchAll('projects');
+    const wb = XLSX.utils.book_new();
+    wb.SheetNames.push('Accounts');
+    wb.Sheets['Accounts'] = XLSX.utils.json_to_sheet(accounts.map(r => _pick(r, LIMITLESS_ACCT_COLS)));
+    wb.SheetNames.push('Projects');
+    wb.Sheets['Projects'] = XLSX.utils.json_to_sheet(projects.map(r => _pick(r, LIMITLESS_PROJ_COLS)));
+    XLSX.writeFile(wb, 'limitless_export.xlsx');
+    showToast('Downloaded: limitless_export.xlsx');
+  } catch(e) { showToast('Export failed: ' + e.message); }
+}
+
+async function handleLimitlessImport(e) {
+  const file = e.target?.files?.[0];
+  if (!file) return;
+  e.target.value = '';
+  try {
+    const ext = file.name.split('.').pop().toLowerCase();
+    let rows;
+    if (ext === 'csv') rows = _parseCSV(await file.text());
+    else if (ext === 'xlsx') rows = _parseXLSX(await file.arrayBuffer());
+    else { showToast('Unsupported file type. Use .csv or .xlsx'); return; }
+    if (!rows || !rows.length) { showToast('Empty file'); return; }
+
+    const sig = Object.keys(rows[0]).map(k => k.toLowerCase().trim());
+    const isLimit = LIMITLESS_SIG.some(s => sig.includes(s));
+    if (!isLimit) { showToast('Not a valid Limitless export file'); return; }
+
+    const acctCols = ['platform','email','account_type'];
+    const accounts = rows.filter(r => acctCols.some(s => r[s] !== undefined));
+    const projCols = ['name','description','color'];
+    const projects = rows.filter(r => projCols.some(s => r[s] !== undefined));
+
+    let imported = 0;
+    const sb = window.__sb;
+    if (!sb || !currentUser) { showToast('Not authenticated'); return; }
+
+    if (accounts.length) {
+      for (const a of accounts) {
+        const { id, user_id, created_at, ...rest } = a;
+        try { await sb.from('accounts').insert({ ...rest, user_id: currentUser.id }); imported++; } catch(_) {}
+      }
+    }
+    if (projects.length) {
+      for (const p of projects) {
+        const { id, user_id, created_at, ...rest } = p;
+        try { await sb.from('projects').insert({ ...rest, user_id: currentUser.id }); imported++; } catch(_) {}
+      }
+    }
+    showToast(`Imported ${imported} rows`);
+    if (imported > 0) { await loadAll(); renderView(); }
+  } catch(e) { showToast('Import failed: ' + e.message); }
+}
+
+function _csv(data, cols) {
+  const esc = v => { const s = v == null ? '' : String(v); return s.includes(',') || s.includes('"') ? '"' + s.replace(/"/g,'""') + '"' : s; };
+  return [cols.join(','), ...data.map(r => cols.map(c => esc(r[c])).join(','))].join('\n');
+}
+
+function _pick(obj, cols) {
+  const r = {};
+  cols.forEach(c => { if (obj[c] !== undefined) r[c] = obj[c]; });
+  return r;
+}
+
+function _parseCSV(text) {
+  const lines = text.trim().split('\n');
+  if (!lines.length) return [];
+  const cols = lines[0].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const vals = [];
+    let inQ = false, cur = '';
+    for (const ch of lines[i]) {
+      if (ch === '"') { inQ = !inQ; continue; }
+      if (ch === ',' && !inQ) { vals.push(cur.trim()); cur = ''; continue; }
+      cur += ch;
+    }
+    vals.push(cur.trim());
+    const row = {};
+    cols.forEach((c, idx) => { if (vals[idx] !== undefined) row[c.trim()] = vals[idx]; });
+    rows.push(row);
+  }
+  return rows;
+}
+
+function _parseXLSX(buf) {
+  const wb = XLSX.read(buf, { type: 'array' });
+  const rows = [];
+  wb.SheetNames.forEach(sn => {
+    const sheet = wb.Sheets[sn];
+    if (!sheet) return;
+    const data = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+    data.forEach(r => rows.push(r));
+  });
+  return rows;
+}
+
+async function _fetchAll(table) {
+  const sb = window.__sb;
+  if (!sb || !currentUser) throw new Error('Not authenticated');
+  const { data, error } = await sb.from(table).select('*').eq('user_id', currentUser.id).order('created_at');
+  if (error) throw error;
+  return data || [];
+}

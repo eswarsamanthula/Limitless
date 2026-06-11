@@ -1,10 +1,10 @@
-const CACHE = 'limitless-v2';
+const CACHE = 'limitless-v3';
 const ASSETS = [
-  '/', '/index.html',
-  '/js/app.js', '/js/db.js', '/js/config.js', '/js/notifications.js',
-  '/css/style.css',
-  '/icons/icon-192.png', '/icons/icon-512.png',
-  '/manifest.json',
+  '/', '/index.html?v=3',
+  '/js/app.js?v=3', '/js/db.js?v=3', '/js/config.js?v=3', '/js/notifications.js?v=3',
+  '/css/style.css?v=3',
+  '/icons/icon-192.png?v=3', '/icons/icon-512.png?v=3',
+  '/manifest.json?v=3',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
   'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js',
   'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@300;400;500&display=swap',

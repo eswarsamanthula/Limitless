@@ -2005,15 +2005,31 @@ function bindUIEvents() {
   });
 
   // Topbar action
-  $('topbar-action').addEventListener('click', () => {
-    if (state.currentView === 'projects') openProjectModal();
-    else if (state.currentView === 'messages') openMessageModal();
-    else if (state.currentView === 'chats') openChatModal();
-    else if (state.currentView === 'prompts') openPromptModal();
-    else if (state.currentView === 'groups') openGroupModal();
-    else if (state.currentView === 'compare') return;
-    else openAccountModal();
-  });
+  const topbarAction = $('topbar-action');
+  if (topbarAction) {
+    topbarAction.addEventListener('click', () => {
+      if (state.currentView === 'projects') openProjectModal();
+      else if (state.currentView === 'messages') openMessageModal();
+      else if (state.currentView === 'chats') openChatModal();
+      else if (state.currentView === 'prompts') openPromptModal();
+      else if (state.currentView === 'groups') openGroupModal();
+      else if (state.currentView === 'compare') return;
+      else openAccountModal();
+    });
+  }
+
+  // Mobile add FAB
+  const addFab = $('add-fab');
+  if (addFab) {
+    addFab.addEventListener('click', () => {
+      if (state.currentView === 'projects') openProjectModal();
+      else if (state.currentView === 'messages') openMessageModal();
+      else if (state.currentView === 'chats') openChatModal();
+      else if (state.currentView === 'prompts') openPromptModal();
+      else if (state.currentView === 'groups') openGroupModal();
+      else openAccountModal();
+    });
+  }
 
   // Empty state buttons (inline onclick handles these)
 

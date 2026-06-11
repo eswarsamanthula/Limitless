@@ -1648,6 +1648,11 @@ select option { background: var(--bg-card); }
 
   /* Topbar bell + add button spacing */
   .topbar-right { gap: 0.4rem; }
+  .topbar-right .btn-primary.small {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.72rem;
+    min-height: 36px;
+  }
 }
 
 /* ─── MOBILE PROJECTS LIST FIX ─── */
@@ -2199,6 +2204,32 @@ select option { background: var(--bg-card); }
   background: var(--text-faint);
   transform: scale(0.85);
 }
+
+.add-fab {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-fg);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2), 0 1px 4px rgba(0,0,0,0.15);
+  transition: box-shadow var(--transition), transform var(--transition);
+  flex-shrink: 0;
+  font-size: 1.4rem;
+  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.add-fab:hover {
+  box-shadow: 0 6px 28px rgba(0,0,0,0.28), 0 2px 6px rgba(0,0,0,0.18);
+  transform: translateY(-1px);
+}
+.add-fab:active { animation: fabPop 0.3s ease both; }
+@media (min-width: 769px) { .add-fab { display: none; } }
 
 /* Panel */
 .qs-panel {

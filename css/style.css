@@ -83,8 +83,8 @@ body {
   font-family: var(--font-mono);
   background: var(--bg);
   color: var(--text);
-  min-height: 100dvh;
-  overflow-x: hidden;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 /* ─── GRAIN ─── */
@@ -221,8 +221,9 @@ body {
 
 /* ─── APP LAYOUT ─── */
 #app-screen {
-  min-height: 100dvh;
+  height: 100dvh;
   flex-direction: row;
+  overflow: hidden;
 }
 
 /* ─── SIDEBAR ─── */
@@ -341,7 +342,7 @@ body {
 /* ─── MAIN CONTENT ─── */
 .main-content {
   flex: 1;
-  min-height: 100dvh;
+  height: 100dvh;
   margin-left: 220px;
   display: flex;
   flex-direction: column;

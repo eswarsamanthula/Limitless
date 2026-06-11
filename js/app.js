@@ -4207,7 +4207,9 @@ function _normalizeAccount(row) {
   } else if (!r.group_ids) r.group_ids = [];
   if (r.price === '' || r.price === undefined || r.price === null) r.price = null;
   else if (typeof r.price === 'string') { const n = parseFloat(r.price); r.price = isNaN(n) ? null : n; }
-  ['limit_hit_at','reset_at','limit_note','note','project_id'].forEach(k => {
+  // project_id references deleted projects — always null out
+  r.project_id = null;
+  ['limit_hit_at','reset_at','limit_note','note'].forEach(k => {
     if (r[k] === '' || r[k] === undefined) r[k] = null;
   });
   return r;

@@ -16,7 +16,7 @@ function initSupabase() {
   // Clear stale caches on version bump
   if (localStorage.getItem('limitless_cache_v') !== _CACHE_V) {
     cacheClear();
-    ['limitless_prompts','limitless_account_tags','limitless_cost_prices','limitless_groups','limitless_chats','limitless_notif_history','limitless_limitHitTimeline','limitless_streak','limitless_streak_last_log','limitless_streak_history','limitless_messages','limitless_limitHitTimeline','limitless_onboarding_done','limitless_logged_in','limitless_email_alerts','limitless_ritual_widget','limitless_widget_on'].forEach(k => { try { localStorage.removeItem(k); } catch(_) {} });
+    ['limitless_prompts','limitless_account_tags','limitless_cost_prices','limitless_groups','limitless_chats','limitless_notif_history','limitless_limitHitTimeline','limitless_streak','limitless_streak_last_log','limitless_streak_history','limitless_messages','limitless_limitHitTimeline','limitless_onboarding_done','limitless_logged_in','limitless_email_alerts'].forEach(k => { try { localStorage.removeItem(k); } catch(_) {} });
     localStorage.setItem('limitless_cache_v', _CACHE_V);
   }
   if (SUPABASE_URL === 'YOUR_SUPABASE_URL') return false;

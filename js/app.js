@@ -232,6 +232,32 @@ async function showApp(user) {
               }
             } catch (_) {}
             renderView();
+          } else if (table === 'poll') {
+            // Polling fallback — reload both data sources
+            await loadAll();
+            try {
+              const userData = await loadAllUserData();
+              if (userData.prompts) state.prompts = userData.prompts;
+              if (userData.accountTags) state.accountTags = userData.accountTags;
+              if (userData.costPrices) state.costPrices = userData.costPrices;
+              if (userData.groups) state.groups = userData.groups;
+              if (userData.chats) state.chats = userData.chats;
+              if (userData.notifHistory) state.notifHistory = userData.notifHistory;
+              if (userData.streak) state.streak = userData.streak;
+              if (userData.messages) { state.messages = userData.messages; saveMessages(userData.messages); }
+              if (userData.limitHitTimeline) state.limitHitTimeline = userData.limitHitTimeline;
+              if (userData.ritual_today_snapshot) state.ritualSnapshot = userData.ritual_today_snapshot;
+              if ('ritual_widget_on' in userData) {
+                localStorage.setItem('limitless_ritual_widget', userData.ritual_widget_on ? 'on' : 'off');
+              }
+              if ('limitless_widget_on' in userData) {
+                localStorage.setItem('limitless_widget_on', userData.limitless_widget_on ? 'on' : 'off');
+              }
+              if ('email_alerts' in userData) {
+                localStorage.setItem('limitless_email_alerts', userData.email_alerts ? 'on' : 'off');
+              }
+            } catch (_) {}
+            renderView();
           }
         } finally {
           _rtBusy = false;

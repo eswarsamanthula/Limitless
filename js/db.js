@@ -299,26 +299,19 @@ async function deleteAllUserData() {
   await _sb.from('user_data').delete().eq('user_id', currentUser.id);
 }
 
-// ─── REALTIME — LIVE CROSS-DEVICE SYNC ──────────────────────
+// ─── REALTIME — LIVE CROSS-DEVICE SYNC (polling only) ──────
+let _pollInterval = null;
 function subscribeToRealtime(callback) {
   _realtimeCallback = callback;
   if (!_sb || !currentUser) return;
-  const uid = currentUser.id;
-  const tables = ['accounts', 'projects', 'user_data'];
-  tables.forEach(table => {
-    const channel = _sb.channel(`live-${table}-${uid}`)
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table, filter: `user_id=eq.${uid}` },
-        () => { if (_realtimeCallback) _realtimeCallback(table); }
-      )
-      .subscribe((status) => {
-        if (status !== 'SUBSCRIBED') console.warn('Realtime not available for', table, status);
-      });
-    _channels.push(channel);
-  });
+  // Poll every 30s — avoids WebSocket/400 errors in restricted envs
+  _pollInterval = setInterval(() => {
+    if (_realtimeCallback) _realtimeCallback('poll');
+  }, 30000);
 }
 
 function unsubscribeFromRealtime() {
+  if (_pollInterval) { clearInterval(_pollInterval); _pollInterval = null; }
   _channels.forEach(ch => _sb?.removeChannel(ch));
   _channels = [];
   _realtimeCallback = null;

@@ -97,6 +97,7 @@ async function init() {
 
     bindUIEvents();
     startGlobalCountdownTick();
+    ptrInit();
   } catch (e) {
     console.error('Init failed:', e);
     showAuth();
@@ -2186,6 +2187,18 @@ function bindUIEvents() {
     $('notif-banner').classList.add('hidden');
     localStorage.setItem('limitless_notif_dismissed', '1');
   });
+
+  // Desktop refresh button
+  $('ptr-desktop-btn')?.addEventListener('click', async () => {
+    if (_ptr.refreshing) return;
+    if (typeof queueDrain === 'function') await queueDrain();
+    if (currentUser) await loadAll({ silent: true });
+    renderView();
+    showSuccess('Refreshed ✓');
+  });
+
+  // Share streak card
+  $('share-card-btn')?.addEventListener('click', shareStreakCard);
 }
 
 // ─── CLEAR LOCALSTORAGE SYNC KEYS ────────────────────────────
@@ -2265,6 +2278,208 @@ function showSessionBanner() {
 function hideSessionBanner() {
   const banner = $('session-banner');
   if (banner) banner.classList.add('hidden');
+}
+
+// ─── PULL-TO-REFRESH ───────────────────────────────────────────
+const _ptr = { pulling: false, startY: 0, pullDist: 0, threshold: 80, refreshing: false };
+
+function ptrInit() {
+  document.addEventListener('touchstart', ptrTouchStart, { passive: true });
+  document.addEventListener('touchmove', ptrTouchMove, { passive: false });
+  document.addEventListener('touchend', ptrTouchEnd, { passive: true });
+}
+
+function ptrTouchStart(e) {
+  const scrollEl = document.scrollingElement || document.documentElement;
+  if (scrollEl.scrollTop !== 0 || _ptr.refreshing) return;
+  _ptr.pulling = true;
+  _ptr.startY = e.touches[0].clientY;
+  _ptr.pullDist = 0;
+}
+
+function ptrTouchMove(e) {
+  if (!_ptr.pulling) return;
+  const y = e.touches[0].clientY;
+  let dist = y - _ptr.startY;
+  if (dist < 0) { _ptr.pulling = false; ptrReset(); return; }
+  if (dist > 50) dist = 50 + (dist - 50) * 0.45;
+  _ptr.pullDist = dist;
+  const pct = Math.min(dist / _ptr.threshold, 1);
+  const overlay = $('ptr-overlay');
+  const ring = $('ptr-ring-fill');
+  if (overlay) {
+    overlay.classList.remove('ptr-hidden');
+    overlay.classList.add('ptr-visible');
+    overlay.style.transform = `translateY(${dist}px)`;
+  }
+  if (ring) {
+    const circ = 125.66;
+    ring.style.strokeDashoffset = String(circ * (1 - pct));
+  }
+  const label = $('ptr-label');
+  if (label) label.textContent = pct >= 1 ? 'Release to refresh' : 'Pull to refresh';
+  if (pct >= 1) e.preventDefault();
+}
+
+function ptrTouchEnd() {
+  if (!_ptr.pulling) return;
+  _ptr.pulling = false;
+  if (_ptr.pullDist >= _ptr.threshold) ptrRefresh();
+  else ptrReset();
+}
+
+async function ptrRefresh() {
+  _ptr.refreshing = true;
+  const label = $('ptr-label');
+  if (label) label.textContent = 'Refreshing…';
+  const ring = $('ptr-ring-fill');
+  if (ring) { ring.style.strokeDashoffset = '0'; ring.style.transition = 'stroke-dashoffset .3s ease'; }
+  const overlay = $('ptr-overlay');
+  if (overlay) {
+    overlay.style.transform = 'translateY(80px)';
+    overlay.classList.add('ptr-refreshing');
+  }
+  try {
+    if (typeof queueDrain === 'function') await queueDrain();
+    if (currentUser) await loadAll({ silent: true });
+    renderView();
+    showSuccess('Refreshed ✓');
+  } catch (_) {
+    showError('Refresh failed');
+  }
+  setTimeout(ptrReset, 500);
+}
+
+function ptrReset() {
+  _ptr.refreshing = false;
+  const overlay = $('ptr-overlay');
+  const ring = $('ptr-ring-fill');
+  const label = $('ptr-label');
+  if (overlay) {
+    overlay.style.transform = '';
+    overlay.classList.remove('ptr-visible', 'ptr-refreshing');
+    overlay.classList.add('ptr-hidden');
+  }
+  if (ring) {
+    ring.style.strokeDashoffset = '125.66';
+    ring.style.transition = 'stroke-dashoffset .35s cubic-bezier(.34,1.56,.64,1)';
+  }
+  if (label) label.textContent = 'Pull to refresh';
+}
+
+// ─── SHAREABLE STREAK CARD ─────────────────────────────────────
+async function generateStreakCard() {
+  const w = 600, h = 400, dpr = 2;
+  const canvas = document.createElement('canvas');
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const isDark = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() === '#0d0d0b';
+  const bg1 = isDark ? '#1a1916' : '#f5f3ee';
+  const bg2 = isDark ? '#0d0d0b' : '#eceae4';
+  const text = isDark ? '#f0ede6' : '#1a1916';
+  const muted = isDark ? '#8a8780' : '#7a7670';
+  const accent = isDark ? '#f0ede6' : '#1a1916';
+  const ringTrack = isDark ? '#2a2a26' : '#ddd9d0';
+
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, bg1);
+  grad.addColorStop(1, bg2);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+
+  const fontMono = 'Geist Mono';
+  const fontDisplay = 'Instrument Serif';
+
+  await document.fonts.ready;
+
+  ctx.fillStyle = accent;
+  ctx.font = `600 14px "${fontMono}", monospace`;
+  ctx.fillText('LIMITLESS', 40, 50);
+
+  const streak = state.streak?.streak || 0;
+  ctx.fillStyle = text;
+  ctx.font = `500 72px "${fontDisplay}", serif`;
+  ctx.fillText(String(streak), 40, 175);
+  ctx.font = `400 14px "${fontMono}", monospace`;
+  ctx.fillStyle = muted;
+  ctx.fillText('day streak', 40, 205);
+
+  const total = state.accounts.length;
+  const available = state.accounts.filter(a => !isOnCooldown(a)).length;
+  const pct = total > 0 ? Math.round((available / total) * 100) : 0;
+
+  const cx = 460, cy = 130, r = 75;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+  ctx.strokeStyle = ringTrack;
+  ctx.lineWidth = 8;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + (pct / 100) * 2 * Math.PI);
+  ctx.strokeStyle = pct >= 80 ? '#4ade80' : (pct >= 50 ? '#fbbf24' : '#f87171');
+  ctx.lineWidth = 8;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  ctx.fillStyle = text;
+  ctx.font = `500 32px "${fontDisplay}", serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText(`${pct}%`, cx, cy + 6);
+  ctx.textAlign = 'left';
+  ctx.font = `400 12px "${fontMono}", monospace`;
+  ctx.fillStyle = muted;
+  ctx.textAlign = 'center';
+  ctx.fillText('available', cx, cy + 30);
+  ctx.textAlign = 'left';
+
+  const statY = 290;
+  const stats = [
+    { label: 'Accounts', value: String(total) },
+    { label: 'Available', value: String(available) },
+    { label: 'Cooldown', value: String(state.accounts.filter(a => isOnCooldown(a)).length) },
+  ];
+  const statW = 160;
+  stats.forEach((s, i) => {
+    const x = 40 + i * statW;
+    ctx.fillStyle = text;
+    ctx.font = `500 28px "${fontDisplay}", serif`;
+    ctx.fillText(s.value, x, statY);
+    ctx.fillStyle = muted;
+    ctx.font = `400 11px "${fontMono}", monospace`;
+    ctx.fillText(s.label, x, statY + 22);
+  });
+
+  ctx.fillStyle = muted;
+  ctx.font = `400 10px "${fontMono}", monospace`;
+  ctx.textAlign = 'left';
+  ctx.fillText(new Date().toISOString().slice(0, 10), 40, 380);
+
+  return canvas;
+}
+
+async function shareStreakCard() {
+  try {
+    const canvas = await generateStreakCard();
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    if (!blob) { showError('Failed to generate card'); return; }
+    const file = new File([blob], `limitless-streak-${new Date().toISOString().slice(0, 10)}.png`, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ title: 'My Limitless Streak', text: 'Check out my AI limit streak!', files: [file] });
+    } else {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = file.name;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showSuccess('Card downloaded ✓');
+    }
+  } catch (e) {
+    if (e.name !== 'AbortError') showError('Share failed');
+  }
 }
 
 // ─── BOOT ────────────────────────────────────────────────────

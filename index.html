@@ -205,7 +205,21 @@
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
   <!-- MAIN CONTENT -->
-  <main class="main-content">
+  <main class="main-content" id="main-content">
+
+    <!-- Pull-to-refresh indicator -->
+    <div id="ptr-overlay" class="ptr-hidden">
+      <div class="ptr-ring">
+        <svg width="48" height="48" viewBox="0 0 48 48">
+          <circle cx="24" cy="24" r="20" fill="none" stroke="var(--bg-subtle)" stroke-width="3"/>
+          <circle id="ptr-ring-fill" cx="24" cy="24" r="20" fill="none"
+            stroke="var(--accent)" stroke-width="3" stroke-linecap="round"
+            stroke-dasharray="125.66" stroke-dashoffset="125.66"
+            transform="rotate(-90 24 24)"/>
+        </svg>
+      </div>
+      <div class="ptr-label" id="ptr-label">Pull to refresh</div>
+    </div>
 
     <!-- TOP BAR -->
     <header class="topbar">
@@ -220,6 +234,12 @@
             <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
           </svg>
           <span class="bell-dot hidden" id="bell-dot"></span>
+        </button>
+        <button class="btn-icon topbar-icon" id="ptr-desktop-btn" title="Refresh">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        </button>
+        <button class="btn-icon topbar-icon" id="share-card-btn" title="Share streak card">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         </button>
         <button class="btn-export" id="export-btn" title="Export status">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>

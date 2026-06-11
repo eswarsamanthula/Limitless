@@ -4172,7 +4172,8 @@ async function handleLimitlessImport(e) {
     if (accounts.length) {
       for (const a of accounts) {
         const { id, user_id, created_at, ...rest } = a;
-        try { await sb.from('accounts').insert({ ...rest, user_id: currentUser.id }); imported++; } catch(_) {}
+        const row = _normalizeAccount(rest);
+        try { await sb.from('accounts').insert({ ...row, user_id: currentUser.id }); imported++; } catch(_) {}
       }
     }
     if (projects.length) {
@@ -4194,6 +4195,21 @@ function _csv(data, cols) {
 function _pick(obj, cols) {
   const r = {};
   cols.forEach(c => { if (obj[c] !== undefined) r[c] = obj[c]; });
+  return r;
+}
+function _normalizeAccount(row) {
+  const r = { ...row };
+  if (r.project_ids && typeof r.project_ids === 'string') {
+    try { r.project_ids = JSON.parse(r.project_ids); } catch { r.project_ids = []; }
+  } else if (!r.project_ids) r.project_ids = [];
+  if (r.group_ids && typeof r.group_ids === 'string') {
+    try { r.group_ids = JSON.parse(r.group_ids); } catch { r.group_ids = []; }
+  } else if (!r.group_ids) r.group_ids = [];
+  if (r.price === '' || r.price === undefined || r.price === null) r.price = null;
+  else if (typeof r.price === 'string') { const n = parseFloat(r.price); r.price = isNaN(n) ? null : n; }
+  ['limit_hit_at','reset_at','limit_note','note','project_id'].forEach(k => {
+    if (r[k] === '' || r[k] === undefined) r[k] = null;
+  });
   return r;
 }
 

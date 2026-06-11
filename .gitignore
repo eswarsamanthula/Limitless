@@ -12,10 +12,11 @@ Thumbs.db
 *.swp
 *.swo
 
-# Supabase local files
-supabase/
+# Supabase local dev files (not SQL schema or edge functions)
+supabase/.branches
+supabase/.temp
+supabase/config.toml
 
 # Local config (contains real keys — never commit)
 js/config.js
-js/config.example.js
 .vercel

@@ -1,4 +1,11 @@
 ﻿-- ============================================================
+--  DEPRECATED: user_data table is now defined in schema.sql.
+--  Do NOT run this file. It is kept for reference only.
+--  All CREATE TABLE and RLS policy definitions have been
+--  consolidated into schema.sql to avoid duplicate definitions.
+-- ============================================================
+-- (original content preserved below for reference)
+-- ============================================================
 --  LIMITLESS — user_data table for cross-device sync
 --  Each row stores a JSON blob keyed by user_id + key.
 --  This replaces localStorage for all syncable user data.

@@ -134,13 +134,8 @@ async function deleteProject(id) {
   if (!_sb || !currentUser) throw new Error('Not authenticated');
   try {
     await _sb.from('projects').delete().eq('id', id).eq('user_id', currentUser.id);
-    const { data: accs } = await _sb.from('accounts').select('id, project_ids').eq('user_id', currentUser.id);
-    for (const acc of accs || []) {
-      const ids = (acc.project_ids || []).filter(pid => pid !== id);
-      if (ids.length !== (acc.project_ids || []).length) {
-        await _sb.from('accounts').update({ project_ids: ids }).eq('id', acc.id);
-      }
-    }
+    // Single atomic update: remove id from project_ids for all affected accounts
+    await _sb.rpc('remove_project_from_accounts', { p_user_id: currentUser.id, p_project_id: id });
   } catch (e) {
     if (!navigator.onLine) { queueAdd('deleteProject', id); return; }
     throw e;
@@ -277,6 +272,9 @@ async function updatePassword(newPassword) {
 // ─── PROFILE: DELETE ALL USER DATA ──────────────────────────
 async function deleteAllUserData() {
   if (!_sb || !currentUser) throw new Error('Not authenticated');
+  // Clear local cache first so it can't repopulate Supabase on next sync
+  cacheClear();
+  localStorage.removeItem(_QUEUE_KEY);
   await _sb.from('accounts').delete().eq('user_id', currentUser.id);
   await _sb.from('projects').delete().eq('user_id', currentUser.id);
   await _sb.from('user_data').delete().eq('user_id', currentUser.id);
@@ -395,11 +393,5 @@ async function _queueSaveProject(project) {
 async function _queueDeleteProject(id) {
   if (!_sb || !currentUser) throw Error('No auth');
   await _sb.from('projects').delete().eq('id', id).eq('user_id', currentUser.id);
-  const { data: accs } = await _sb.from('accounts').select('id, project_ids').eq('user_id', currentUser.id);
-  for (const acc of accs || []) {
-    const ids = (acc.project_ids || []).filter(pid => pid !== id);
-    if (ids.length !== (acc.project_ids || []).length) {
-      await _sb.from('accounts').update({ project_ids: ids }).eq('id', acc.id);
-    }
-  }
+  await _sb.rpc('remove_project_from_accounts', { p_user_id: currentUser.id, p_project_id: id });
 }

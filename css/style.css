@@ -4,12 +4,13 @@
    Theme: Auto (light/dark via system)
    ============================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap');
 
 /* ─── TOKENS ─── */
 :root {
   --font-display: 'Instrument Serif', Georgia, serif;
   --font-mono: 'Geist Mono', 'Courier New', monospace;
+  --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
 
   --radius: 12px;
   --radius-sm: 8px;
@@ -80,7 +81,7 @@ html { font-size: 16px; -webkit-font-smoothing: antialiased; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 * { scrollbar-width: thin; scrollbar-color: var(--text-faint) transparent; }
 body {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   background: var(--bg);
   color: var(--text);
   height: 100dvh;
@@ -124,9 +125,11 @@ body {
   font-size: 2rem;
   line-height: 1;
   color: var(--text);
-  animation: spin 8s linear infinite;
+  animation: none;
   display: inline-block;
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+.logo-mark:hover { transform: rotate(360deg); }
 .logo-mark.small { font-size: 1.1rem; animation: none; }
 @keyframes spin {
   from { transform: rotate(0deg); }
@@ -294,7 +297,12 @@ body {
   justify-content: flex-start;
 }
 .nav-item:hover { background: var(--bg-subtle); color: var(--text); }
-.nav-item.active { background: var(--accent); color: var(--accent-fg); }
+.nav-item.active {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--text);
+  border-left: 3px solid var(--accent);
+  padding-left: calc(0.75rem - 3px);
+}
 .nav-icon { font-size: 0.9rem; }
 .sidebar-footer { display: flex; flex-direction: column; gap: 0.5rem; }
 .user-pill {
@@ -443,7 +451,7 @@ body {
 }
 .stat-num.green { color: var(--green); }
 .stat-num.amber { color: var(--amber); }
-.stat-label { font-size: 0.7rem; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.08em; }
+.stat-label { font-family: var(--font-sans); font-size: 0.7rem; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.08em; }
 
 /* ─── SECTION HEADER ─── */
 .section-header {
@@ -499,9 +507,10 @@ body {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0;
-  height: 2px;
+  height: 3px;
   background: var(--platform-color, var(--border));
-  opacity: 0.7;
+  opacity: 1;
+  border-radius: var(--radius) var(--radius) 0 0;
 }
 .account-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
 
@@ -572,9 +581,12 @@ body {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: 0.75rem;
+  font-size: 0.68rem;
   font-weight: 500;
-  color: var(--text-muted);
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 .platform-dot {
   width: 8px; height: 8px;
@@ -600,15 +612,16 @@ body {
 .card-badge.free { background: var(--bg-subtle); color: var(--text-faint); }
 .card-badge.pro  { background: #d4af37; color: #000; }
 
+/* Email is the hero: largest, most prominent element on the card */
 .card-email {
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   color: var(--text);
   margin-bottom: 0.35rem;
-  font-weight: 400;
+  font-weight: 500;
   word-break: break-all;
 }
 .card-project {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   color: var(--text-faint);
   margin-bottom: 0.75rem;
   display: flex;
@@ -634,8 +647,10 @@ body {
 }
 .status-dot.available { background: var(--green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 20%, transparent); }
 .status-dot.cooldown  { background: var(--amber); box-shadow: 0 0 0 3px color-mix(in srgb, var(--amber) 20%, transparent); }
-.status-text { font-size: 0.75rem; color: var(--text-muted); }
-.countdown-text { font-family: var(--font-mono); font-size: 0.8rem; color: var(--amber); font-weight: 500; }
+/* status-text hidden: the countdown/ready text is the status — no redundant label needed */
+.status-text { display: none; }
+/* Countdown is the second focal point: larger, prominent */
+.countdown-text { font-family: var(--font-mono); font-size: 0.9rem; color: var(--amber); font-weight: 600; }
 
 .card-note {
   font-size: 0.72rem;
@@ -2624,12 +2639,12 @@ select option { background: var(--bg-card); }
 /* ─── DASHBOARD WIDGETS ROW ─── */
 .dash-widgets {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
   margin-bottom: 1rem;
   transition: grid-template-columns .3s ease;
 }
-.dash-widgets.ritual-off { grid-template-columns: 1fr 1fr 1fr; }
+.dash-widgets.ritual-off { grid-template-columns: 1fr 1fr; }
 .dash-widgets.ritual-off #ritual-widget { display: none; }
 @media (max-width: 768px) {
   .dash-widgets { grid-template-columns: 1fr !important; }

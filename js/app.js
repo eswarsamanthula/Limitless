@@ -165,26 +165,17 @@ async function showApp(user) {
       }
       if (userData.messages) { state.messages = userData.messages; saveMessages(userData.messages); }
       if (userData.limitHitTimeline) { state.limitHitTimeline = userData.limitHitTimeline; localStorage.setItem('limitless_limitHitTimeline', JSON.stringify(userData.limitHitTimeline)); }
-      // Sync email alerts preference from Supabase → localStorage (so edge function + client agree)
-      if (userData.email_alerts === false) {
-        localStorage.setItem('limitless_email_alerts', 'off');
-      } else if (userData.email_alerts === true) {
-        localStorage.setItem('limitless_email_alerts', 'on');
-      } else {
-        localStorage.setItem('limitless_email_alerts', 'off');
+      // Sync server-side preferences → localStorage, but only if the key exists on server
+      // (otherwise respect whatever the user set locally)
+      if ('email_alerts' in userData) {
+        localStorage.setItem('limitless_email_alerts', userData.email_alerts ? 'on' : 'off');
       }
-      if (userData.ritual_widget_on === false) {
-        localStorage.setItem('limitless_ritual_widget', 'off');
-      } else if (userData.ritual_widget_on === true) {
-        localStorage.setItem('limitless_ritual_widget', 'on');
-      } else {
-        localStorage.setItem('limitless_ritual_widget', 'off');
+      if ('ritual_widget_on' in userData) {
+        localStorage.setItem('limitless_ritual_widget', userData.ritual_widget_on ? 'on' : 'off');
       }
       if (userData.ritual_today_snapshot) state.ritualSnapshot = userData.ritual_today_snapshot;
-      if (userData.limitless_widget_on === false) {
-        localStorage.setItem('limitless_widget_on', 'off');
-      } else if (userData.limitless_widget_on === true) {
-        localStorage.setItem('limitless_widget_on', 'on');
+      if ('limitless_widget_on' in userData) {
+        localStorage.setItem('limitless_widget_on', userData.limitless_widget_on ? 'on' : 'off');
       }
     } catch (e) {
       console.warn('Could not load user data from server, using defaults');
@@ -230,26 +221,14 @@ async function showApp(user) {
               if (userData.messages) { state.messages = userData.messages; saveMessages(userData.messages); }
               if (userData.limitHitTimeline) state.limitHitTimeline = userData.limitHitTimeline;
               if (userData.ritual_today_snapshot) state.ritualSnapshot = userData.ritual_today_snapshot;
-              if (userData.ritual_widget_on === false) {
-                localStorage.setItem('limitless_ritual_widget', 'off');
-              } else if (userData.ritual_widget_on === true) {
-                localStorage.setItem('limitless_ritual_widget', 'on');
-              } else {
-                localStorage.setItem('limitless_ritual_widget', 'off');
+              if ('ritual_widget_on' in userData) {
+                localStorage.setItem('limitless_ritual_widget', userData.ritual_widget_on ? 'on' : 'off');
               }
-              if (userData.limitless_widget_on === false) {
-                localStorage.setItem('limitless_widget_on', 'off');
-              } else if (userData.limitless_widget_on === true) {
-                localStorage.setItem('limitless_widget_on', 'on');
-              } else {
-                localStorage.setItem('limitless_widget_on', 'off');
+              if ('limitless_widget_on' in userData) {
+                localStorage.setItem('limitless_widget_on', userData.limitless_widget_on ? 'on' : 'off');
               }
-              if (userData.email_alerts === false) {
-                localStorage.setItem('limitless_email_alerts', 'off');
-              } else if (userData.email_alerts === true) {
-                localStorage.setItem('limitless_email_alerts', 'on');
-              } else {
-                localStorage.setItem('limitless_email_alerts', 'off');
+              if ('email_alerts' in userData) {
+                localStorage.setItem('limitless_email_alerts', userData.email_alerts ? 'on' : 'off');
               }
             } catch (_) {}
             renderView();
@@ -1324,7 +1303,7 @@ function renderRitualWidget() {
           </svg>
         </div>
         <div class="ritual-widget-info">
-          <span class="ritual-widget-label">Ritual</span>
+          <span class="ritual-widget-label">◎ Ritual</span>
           <span class="ritual-widget-stat">No habits tracked yet today.</span>
           <span class="ritual-widget-streak">Start tracking to see your progress</span>
           <div class="ritual-widget-footer">
@@ -1350,7 +1329,7 @@ function renderRitualWidget() {
         <span class="ritual-widget-pct">${Math.round(snap.pct)}%</span>
       </div>
       <div class="ritual-widget-info">
-        <span class="ritual-widget-label">Ritual</span>
+        <span class="ritual-widget-label">◎ Ritual</span>
         <span class="ritual-widget-stat">${snap.done} of ${snap.total} habits done</span>
         <span class="ritual-widget-streak">🔥 ${snap.streak||0} day streak</span>
         <div class="ritual-widget-footer">

@@ -36,6 +36,25 @@ function switchView(name) {
   });
   const view404 = document.getElementById('view-404');
   if (view404) view404.classList.toggle('active', !found);
+  // Update topbar title
+  const viewTitles = {
+    'dashboard': 'Dashboard',
+    'accounts': 'Accounts',
+    'projects': 'Projects',
+    'groups': 'Groups',
+    'timeline': 'Timeline',
+    'report': 'Weekly Report',
+    'heatmap': 'Heatmap',
+    'rotation': 'Rotation',
+    'cost': 'Cost Analysis',
+    'compare': 'Compare',
+    'prompts': 'Prompts',
+    'chats': 'Chats',
+    'messages': 'Messages',
+    'settings': 'Settings'
+  };
+  const titleEl = document.getElementById('view-title');
+  if (titleEl) titleEl.textContent = viewTitles[name] || name.charAt(0).toUpperCase() + name.slice(1);
   renderView();
 }
 

@@ -1088,7 +1088,7 @@ function handleSaveGroup() {
     const idx = groups.findIndex(g => g.id === id);
     if (idx >= 0) groups[idx] = { ...groups[idx], name, color };
   } else {
-    groups.push({ id: Date.now().toString(), name, color, account_ids: [] });
+    groups.push({ id: crypto.randomUUID(), name, color, account_ids: [] });
   }
   saveGroups(groups);
   closeModal('modal-group');

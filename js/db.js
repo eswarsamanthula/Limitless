@@ -9,7 +9,7 @@ let currentUser = null;
 let _channels = [];
 let _realtimeCallback = null;
 
-const _CACHE_V = '4'; // bump to clear all localStorage caches
+const _CACHE_V = '5'; // bump to clear all localStorage caches
 
 // ─── INIT ───────────────────────────────────────────────────
 function initSupabase() {

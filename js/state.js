@@ -34,6 +34,4 @@ function typeTag(type) {
   return `<span class="tag custom">${escHtml(type.toUpperCase())}</span>`;
 }
 
-const haptic = (ms = 10) => { try { navigator.vibrate(ms); } catch (_) {} };
-
 // currentUser is defined in db.js (loaded first)

@@ -38,6 +38,7 @@ function renderDashboard() {
   renderPlatformPie();
   renderReasonAnalytics();
   renderSmartSuggestion();
+  renderRitualWidget();
 }
 
 function renderPlatformPie() {

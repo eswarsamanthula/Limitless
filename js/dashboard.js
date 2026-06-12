@@ -298,17 +298,35 @@ function renderRitualWidget() {
   }
   widget.classList.remove('hidden');
   const s = state.ritualSnapshot;
-  const available = Array.isArray(state.accounts) ? state.accounts.filter(a => !isOnCooldown(a)).length : 0;
-  const total = Array.isArray(state.accounts) ? state.accounts.length : 0;
-  const color = available >= Math.ceil(total * 0.8) ? 'var(--green)' : available >= Math.ceil(total * 0.5) ? 'var(--amber)' : 'var(--red)';
+  const done = Number.isFinite(s.done) ? s.done : 0;
+  const total = Number.isFinite(s.total) ? s.total : 0;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  const color = pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--amber)' : 'var(--red)';
+  
+  // SVG progress ring
+  const radius = 32;
+  const circ = 2 * Math.PI * radius;
+  const offset = circ - (pct / 100) * circ;
+  const ringColor = pct >= 80 ? '#6ee7b7' : pct >= 50 ? '#fcd34d' : '#fca5a5';
+  
   widget.innerHTML = `
-    <div class="ritual-widget-header">
-      <span class="ritual-widget-icon">◎</span>
-      <span class="ritual-widget-title">Limitless</span>
-    </div>
-    <div class="ritual-widget-body">
-      <span class="ritual-widget-stat" style="color:${color}">${Number.isFinite(available) ? available : 0}/${Number.isFinite(total) ? total : 0} available</span>
-      <span class="ritual-widget-streak">🔥 ${s.streak || 0} day streak</span>
+    <div class="ritual-widget-inner">
+      <svg class="ritual-widget-ring" width="80" height="80" viewBox="0 0 80 80">
+        <circle cx="40" cy="40" r="${radius}" fill="none" stroke="var(--bg-subtle)" stroke-width="4"/>
+        <circle cx="40" cy="40" r="${radius}" fill="none" stroke="${ringColor}" stroke-width="4"
+          stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round"
+          transform="rotate(-90 40 40)" style="transition: stroke-dashoffset 0.8s ease"/>
+        <text x="40" y="40" text-anchor="middle" dominant-baseline="central"
+          fill="var(--text)" font-family="var(--font-display)" font-size="18" font-weight="600">${pct}%</text>
+      </svg>
+      <div class="ritual-widget-info">
+        <div class="ritual-widget-label">Ritual</div>
+        <div class="ritual-widget-stat">${done}/${total} habits</div>
+        <div class="ritual-widget-streak">🔥 ${s.streak || 0} day streak</div>
+        <div class="ritual-widget-footer">
+          <a href="https://appritual.vercel.app" target="_blank" class="ritual-widget-cta">View Ritual →</a>
+        </div>
+      </div>
     </div>
   `;
 }

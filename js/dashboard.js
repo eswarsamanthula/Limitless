@@ -1,10 +1,10 @@
 'use strict';
 
 function renderDashboard() {
-  const accounts = filterAccounts(state.accounts, state.filter);
+  const accounts = filterAccounts(Array.isArray(state.accounts) ? state.accounts : [], state.filter);
 
-  const total = state.accounts.length;
-  const cooling = state.accounts.filter(a => isOnCooldown(a)).length;
+  const total = Array.isArray(state.accounts) ? state.accounts.length : 0;
+  const cooling = Array.isArray(state.accounts) ? state.accounts.filter(a => isOnCooldown(a)).length : 0;
   const available = total - cooling;
 
   $('stat-total').textContent = total;
@@ -85,14 +85,14 @@ function renderHealthRing() {
   const scoreEl = document.getElementById('health-score');
   const subEl = document.getElementById('health-sub');
   if (!svg || !scoreEl) return;
-  const total = state.accounts.length;
+  const total = Array.isArray(state.accounts) ? state.accounts.length : 0;
   if (total === 0) {
     scoreEl.textContent = '—';
     subEl.textContent = 'No accounts';
     svg.innerHTML = '';
     return;
   }
-  const available = state.accounts.filter(a => !isOnCooldown(a)).length;
+  const available = Array.isArray(state.accounts) ? state.accounts.filter(a => !isOnCooldown(a)).length : 0;
   const pct = Math.round((available / total) * 100);
   const radius = 34;
   const circ = 2 * Math.PI * radius;
@@ -105,7 +105,7 @@ function renderHealthRing() {
       transform="rotate(-90 40 40)" style="transition: stroke-dashoffset 0.8s ease"/>
     <text x="40" y="40" text-anchor="middle" dominant-baseline="central"
       fill="var(--text)" font-family="var(--font-display)" font-size="22" font-weight="400">${pct}%</text>`;
-  scoreEl.textContent = `${available}/${total}`;
+  scoreEl.textContent = `${Number.isFinite(available) ? available : 0}/${Number.isFinite(total) ? total : 0}`;
   subEl.textContent = pct >= 80 ? 'Great shape' : pct >= 50 ? 'Some cooldowns' : 'Heavy usage';
 }
 

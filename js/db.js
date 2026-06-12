@@ -6,6 +6,7 @@
 
 let _sb = null;
 let currentUser = null;
+let _showAppGuard = false;
 let _channels = [];
 let _realtimeCallback = null;
 

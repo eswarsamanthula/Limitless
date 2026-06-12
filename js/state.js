@@ -34,9 +34,6 @@ function typeTag(type) {
   return `<span class="tag custom">${escHtml(type.toUpperCase())}</span>`;
 }
 
-const $ = id => document.getElementById(id);
-const $$ = sel => document.querySelectorAll(sel);
 const haptic = (ms = 10) => { try { navigator.vibrate(ms); } catch (_) {} };
 
-let _showAppGuard = false;
-let currentUser = null;
+// currentUser is defined in db.js (loaded first)

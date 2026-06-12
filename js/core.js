@@ -254,7 +254,7 @@ function writeLimitlessSnapshot() {
     setUserData('limitless_today_snapshot', {
       healthScore, available, total, streak,
       updatedAt: new Date().toISOString()
-    }).catch(() => {});
+    }).catch(e => console.warn('Sync failed:', e));
   }
 }
 

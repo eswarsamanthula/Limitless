@@ -1,11 +1,11 @@
 const fs = require('fs');
 const path = require('path');
 
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://your-project.supabase.co';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'your_anon_key';
-const EMAILJS_PUBLIC_KEY = process.env.EMAILJS_PUBLIC_KEY || 'sveGs-7_BdQQ_3ViI';
-const EMAILJS_SERVICE_ID = process.env.EMAILJS_SERVICE_ID || 'service_ui7gngn';
-const EMAILJS_TEMPLATE_ID = process.env.EMAILJS_TEMPLATE_ID || 'template_u4138jd';
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+const EMAILJS_PUBLIC_KEY = process.env.EMAILJS_PUBLIC_KEY || '';
+const EMAILJS_SERVICE_ID = process.env.EMAILJS_SERVICE_ID || '';
+const EMAILJS_TEMPLATE_ID = process.env.EMAILJS_TEMPLATE_ID || '';
 
 const config = `const SUPABASE_URL = '${SUPABASE_URL}';
 const SUPABASE_ANON_KEY = '${SUPABASE_ANON_KEY}';

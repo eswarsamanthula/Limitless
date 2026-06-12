@@ -34,12 +34,6 @@ function typeTag(type) {
   return `<span class="tag custom">${escHtml(type.toUpperCase())}</span>`;
 }
 
-const PLATFORM_COLORS = {
-  ChatGPT: '#74aa9c', Claude: '#d97757', Gemini: '#8b9cbb',
-  Grok: '#1e1e1e', Copilot: '#9b8bbf', Other: '#8a8780',
-};
-window.PLATFORM_COLORS = PLATFORM_COLORS;
-
 const $ = id => document.getElementById(id);
 const $$ = sel => document.querySelectorAll(sel);
 const haptic = (ms = 10) => { try { navigator.vibrate(ms); } catch (_) {} };

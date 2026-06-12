@@ -12,7 +12,7 @@ function loadPrompts() {
 function savePrompts(prompts) {
   state.prompts = prompts;
   localStorage.setItem('limitless_prompts', JSON.stringify(prompts));
-  if (typeof setUserData === 'function') setUserData('prompts', prompts).catch(() => {});
+  if (typeof setUserData === 'function') setUserData('prompts', prompts).catch(e => console.warn('Sync failed:', e));
 }
 
 function renderPrompts(query = '') {
@@ -130,7 +130,7 @@ function loadChats() {
 function saveChats(chats) {
   state.chats = chats;
   localStorage.setItem('limitless_chats', JSON.stringify(chats));
-  if (typeof setUserData === 'function') setUserData('chats', chats).catch(() => {});
+  if (typeof setUserData === 'function') setUserData('chats', chats).catch(e => console.warn('Sync failed:', e));
 }
 
 function renderChats(query = '') {
@@ -452,7 +452,7 @@ function handleSaveMessage() {
     msgs.unshift({ id: Date.now().toString(), title, prompt, reply, tags, platform, created_at: new Date().toISOString() });
   }
   saveMessages(msgs);
-  if (typeof setUserData === 'function') setUserData('messages', msgs).catch(() => {});
+  if (typeof setUserData === 'function') setUserData('messages', msgs).catch(e => console.warn('Sync failed:', e));
   closeModal('modal-message');
   renderMessages(document.getElementById('messages-search')?.value || '');
   showSuccess(id ? 'Message updated ✓' : 'Message saved ✦');
@@ -461,7 +461,7 @@ function handleSaveMessage() {
 function deleteMessage(msgId) {
   const updated = loadMessages().filter(m => m.id !== msgId);
   saveMessages(updated);
-  if (typeof setUserData === 'function') setUserData('messages', updated).catch(() => {});
+  if (typeof setUserData === 'function') setUserData('messages', updated).catch(e => console.warn('Sync failed:', e));
   renderMessages(document.getElementById('messages-search')?.value || '');
   showSuccess('Message deleted');
 }

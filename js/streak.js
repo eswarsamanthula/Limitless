@@ -31,7 +31,7 @@
     localStorage.setItem(STREAK_KEY,   String(streak));
     localStorage.setItem(LAST_LOG_KEY, lastLog);
     localStorage.setItem(HISTORY_KEY,  JSON.stringify(history));
-    if (typeof setUserData === 'function') setUserData('streak', { streak, lastLog, history }).catch(() => {});
+    if (typeof setUserData === 'function') setUserData('streak', { streak, lastLog, history }).catch(e => console.warn('Sync failed:', e));
   }
 
   function recordActivity() {

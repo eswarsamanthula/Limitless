@@ -241,7 +241,7 @@ async function handleDeleteAccount(id) {
       localStorage.setItem('limitless_streak', '0');
       localStorage.setItem('limitless_streak_last_log', '');
       localStorage.setItem('limitless_streak_history', '[]');
-      if (typeof setUserData === 'function') setUserData('streak', state.streak).catch(() => {});
+      if (typeof setUserData === 'function') setUserData('streak', state.streak).catch(e => console.warn('Sync failed:', e));
     }
     renderView();
     showSuccess('Account deleted');
@@ -295,7 +295,7 @@ async function handleSaveLimit() {
       state.limitHitTimeline = [...(state.limitHitTimeline || []), entry];
       localStorage.setItem('limitless_limitHitTimeline', JSON.stringify(state.limitHitTimeline));
       if (typeof setUserData === 'function') {
-        setUserData('limitHitTimeline', state.limitHitTimeline).catch(() => {});
+        setUserData('limitHitTimeline', state.limitHitTimeline).catch(e => console.warn('Sync failed:', e));
       }
     }
 
@@ -400,7 +400,7 @@ function saveAccountTags(accountId, tags) {
   const all = { ..._allTags(), [accountId]: tags };
   state.accountTags = all;
   localStorage.setItem('limitless_account_tags', JSON.stringify(all));
-  if (typeof setUserData === 'function') setUserData('accountTags', all).catch(() => {});
+  if (typeof setUserData === 'function') setUserData('accountTags', all).catch(e => console.warn('Sync failed:', e));
 }
 
 function addTag(accountId, tag) {
@@ -538,7 +538,7 @@ function loadGroups() {
 function saveGroups(groups) {
   state.groups = groups;
   localStorage.setItem('limitless_groups', JSON.stringify(groups));
-  if (typeof setUserData === 'function') setUserData('groups', groups).catch(() => {});
+  if (typeof setUserData === 'function') setUserData('groups', groups).catch(e => console.warn('Sync failed:', e));
 }
 
 function renderGroupsView() {

@@ -23,12 +23,19 @@ function renderView() {
 
 function switchView(name) {
   state.currentView = name;
-  $$('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.view === name));
+  document.querySelectorAll('.nav-item[data-view]').forEach(btn => btn.classList.toggle('active', btn.dataset.view === name));
   const views = ['dashboard', 'accounts', 'projects', 'groups', 'timeline', 'report', 'heatmap', 'rotation', 'cost', 'compare', 'prompts', 'chats', 'messages', 'settings'];
+  let found = false;
   views.forEach(v => {
     const el = document.getElementById(`view-${v}`);
-    if (el) el.classList.toggle('active', v === name);
+    if (el) {
+      const isActive = v === name;
+      el.classList.toggle('active', isActive);
+      if (isActive) found = true;
+    }
   });
+  const view404 = document.getElementById('view-404');
+  if (view404) view404.classList.toggle('active', !found);
   renderView();
 }
 
@@ -38,7 +45,7 @@ function switchView(name) {
 
 function bindUIEvents() {
   // Sidebar navigation
-  document.querySelectorAll('.nav-btn').forEach(btn => {
+  document.querySelectorAll('.nav-item[data-view]').forEach(btn => {
     btn.addEventListener('click', () => {
       const view = btn.dataset.view;
       if (view) switchView(view);
@@ -53,6 +60,7 @@ function bindUIEvents() {
   // Dashboard + Add Account button
   document.getElementById('add-account-btn')?.addEventListener('click', () => openAccountModal());
   document.getElementById('add-project-btn')?.addEventListener('click', () => openProjectModal());
+  document.getElementById('add-fab')?.addEventListener('click', () => openAccountModal());
 
   // Account modal events
   const saveAccountBtn = document.getElementById('save-account-btn');
@@ -182,7 +190,7 @@ function addNotifHistory(platform, email) {
   const trimmed = history.slice(0, 30);
   state.notifHistory = trimmed;
   localStorage.setItem('limitless_notif_history', JSON.stringify(trimmed));
-  if (typeof setUserData === 'function') setUserData('notifHistory', trimmed).catch(() => {});
+  if (typeof setUserData === 'function') setUserData('notifHistory', trimmed).catch(e => console.warn('Sync failed:', e));
   $('bell-dot')?.classList.remove('hidden');
 }
 
@@ -493,6 +501,26 @@ function initExport() {
 //  BOOT — DOM CONTENT LOADED
 // ═══════════════════════════════════════════════════════════════
 
+// ─── GLOBAL ERROR HANDLER ──────────────────────────────────
+
+window.onerror = function (msg, source, line, col, error) {
+  console.error('Global error:', msg, 'at', source, line + ':' + col);
+  const toast = document.getElementById('toast');
+  if (toast && !toast.classList.contains('show')) {
+    showError('Something went wrong — tap to retry');
+    toast.addEventListener('click', () => location.reload(), { once: true });
+  }
+  return true;
+};
+
+window.onunhandledrejection = function (e) {
+  console.error('Unhandled promise rejection:', e.reason);
+  const toast = document.getElementById('toast');
+  if (toast && !toast.classList.contains('show')) {
+    showError('A background sync failed — check your connection');
+  }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   init();
   initTheme();
@@ -583,7 +611,7 @@ document.addEventListener('DOMContentLoaded', () => {
       prices[platform] = parseFloat(e.target.value) || 0;
       state.costPrices = prices;
       localStorage.setItem('limitless_cost_prices', JSON.stringify(prices));
-      if (typeof setUserData === 'function') setUserData('costPrices', prices).catch(() => {});
+      if (typeof setUserData === 'function') setUserData('costPrices', prices).catch(e => console.warn('Sync failed:', e));
       renderCost();
     }
   });
@@ -716,7 +744,7 @@ document.addEventListener('DOMContentLoaded', () => {
     $('settings-email-toggle').textContent = next === 'off' ? 'OFF' : 'ON';
     $('settings-email-toggle').className = next === 'off' ? 'btn-ghost small danger' : 'btn-ghost small';
     if (typeof setUserData === 'function') {
-      setUserData('email_alerts', next === 'on').catch(() => {});
+      setUserData('email_alerts', next === 'on').catch(e => console.warn('Sync failed:', e));
     }
     if (next === 'on' && typeof emailjs !== 'undefined') {
       emailjs.init(EMAILJS_PUBLIC_KEY);
@@ -730,7 +758,7 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('limitless_ritual_widget', next);
     $('settings-ritual-toggle').textContent = next === 'off' ? 'OFF' : 'ON';
     $('settings-ritual-toggle').className = next === 'off' ? 'btn-ghost small danger' : 'btn-ghost small';
-    try { await setUserData('ritual_widget_on', next === 'on'); } catch (_) {}
+    try { await setUserData('ritual_widget_on', next === 'on'); } catch (e) { console.warn('Failed to sync ritual widget setting:', e); }
     renderRitualWidget();
     showToast(next === 'off' ? 'Ritual widget hidden' : 'Ritual widget visible');
   });

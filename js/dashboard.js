@@ -298,14 +298,16 @@ function renderRitualWidget() {
   }
   widget.classList.remove('hidden');
   const s = state.ritualSnapshot;
-  const color = s.healthScore >= 80 ? 'var(--green)' : s.healthScore >= 50 ? 'var(--amber)' : 'var(--red)';
+  const available = Array.isArray(state.accounts) ? state.accounts.filter(a => !isOnCooldown(a)).length : 0;
+  const total = Array.isArray(state.accounts) ? state.accounts.length : 0;
+  const color = available >= Math.ceil(total * 0.8) ? 'var(--green)' : available >= Math.ceil(total * 0.5) ? 'var(--amber)' : 'var(--red)';
   widget.innerHTML = `
     <div class="ritual-widget-header">
       <span class="ritual-widget-icon">◎</span>
       <span class="ritual-widget-title">Limitless</span>
     </div>
     <div class="ritual-widget-body">
-      <span class="ritual-widget-stat" style="color:${color}">${s.available}/${s.total} available</span>
+      <span class="ritual-widget-stat" style="color:${color}">${Number.isFinite(available) ? available : 0}/${Number.isFinite(total) ? total : 0} available</span>
       <span class="ritual-widget-streak">🔥 ${s.streak || 0} day streak</span>
     </div>
   `;
